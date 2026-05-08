@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spell Quest 🌿</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sky: #0ea5e9; --deep: #0c1a3a; --card: #162040;
+    --accent: #f59e0b; --green: #22c55e; --red: #ef4444;
+    --text: #e2e8f0; --muted: #94a3b8; --purple: #8b5cf6;
+  }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--deep); color: var(--text);
+    min-height: 100vh; overflow: hidden; position: relative;
+  }
+
+  /* STARS */
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star {
+    position: absolute; border-radius: 50%; background: white;
+    animation: twinkle var(--d) ease-in-out infinite alternate; opacity: 0;
+  }
+  @keyframes twinkle {
+    from { opacity: 0.1; transform: scale(0.8); }
+    to   { opacity: 0.9; transform: scale(1.2); }
+  }
+
+  /* SCREENS */
+  .screen {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 28px 24px;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.96); }
+
+  /* LAUNCH SCREEN */
+  #launchScreen {
+    background: linear-gradient(160deg, #0c1a3a 0%, #0f2454 50%, #0c1a3a 100%);
+  }
+  .launch-glow {
+    position: absolute; width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(14,165,233,0.18) 0%, transparent 70%);
+    border-radius: 50%; animation: pulse-glow 3s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%,100% { transform: scale(1); opacity: 0.6; }
+    50%      { transform: scale(1.2); opacity: 1; }
+  }
+  .launch-emoji {
+    font-size: 90px; margin-bottom: 24px;
+    animation: float 3s ease-in-out infinite;
+    position: relative; z-index: 1;
+    filter: drop-shadow(0 0 30px rgba(245,158,11,0.5));
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0px) rotate(-3deg); }
+    50%      { transform: translateY(-16px) rotate(3deg); }
+  }
+  .launch-title {
+    font-family: 'Fredoka One', cursive; font-size: 3.2rem; color: var(--accent);
+    letter-spacing: 2px; position: relative; z-index: 1;
+    text-shadow: 0 0 40px rgba(245,158,11,0.5);
+    animation: fadeSlideUp 0.8s ease 0.3s both;
+  }
+  .launch-sub {
+    font-size: 1rem; color: var(--muted); margin-top: 8px;
+    font-weight: 600; letter-spacing: 1px; position: relative; z-index: 1;
+    animation: fadeSlideUp 0.8s ease 0.5s both;
+  }
+  .launch-loader { margin-top: 60px; position: relative; z-index: 1; animation: fadeSlideUp 0.8s ease 0.7s both; }
+  .loader-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; }
+  .loader-fill {
+    height: 100%; background: linear-gradient(90deg, var(--sky), var(--accent));
+    border-radius: 99px; animation: loading 2.2s ease forwards;
+  }
+  @keyframes loading { from { width: 0%; } to { width: 100%; } }
+  .loader-text { text-align: center; margin-top: 12px; color: var(--muted); font-size: 0.8rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ONBOARDING */
+  #onboardingScreen { background: transparent; padding: 0; }
+  .onboard-wrapper { width: 100%; max-width: 420px; position: relative; z-index: 1; }
+  .slides-container { overflow: hidden; width: 100%; }
+  .slides-track { display: flex; transition: transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+  .slide {
+    min-width: 100%; padding: 0 24px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .slide-emoji {
+    font-size: 80px; margin-bottom: 28px;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.4));
+  }
+  .slide:nth-child(2) .slide-emoji { animation-delay: 0.5s; }
+  .slide:nth-child(3) .slide-emoji { animation-delay: 1s; }
+  .slide-tag {
+    font-size: 0.7rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--sky); background: rgba(14,165,233,0.12);
+    border: 1px solid rgba(14,165,233,0.25); padding: 4px 14px;
+    border-radius: 99px; margin-bottom: 18px;
+  }
+  .slide h2 { font-family: 'Fredoka One', cursive; font-size: 2rem; color: white; line-height: 1.2; margin-bottom: 14px; }
+  .slide h2 span { color: var(--accent); }
+  .slide p { color: var(--muted); font-size: 1rem; line-height: 1.7; font-weight: 600; max-width: 300px; }
+  .feature-cards { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 20px; }
+  .feat-card {
+    background: var(--card); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 14px; text-align: left;
+  }
+  .feat-icon { font-size: 1.6rem; }
+  .feat-title { font-weight: 800; font-size: 0.9rem; color: white; }
+  .feat-desc  { font-size: 0.78rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .dots { display: flex; gap: 8px; justify-content: center; margin-top: 32px; }
+  .dot { width: 8px; height: 8px; border-radius: 99px; background: rgba(255,255,255,0.2); transition: all 0.3s ease; cursor: pointer; }
+  .dot.active { width: 24px; background: var(--accent); }
+  .onboard-nav { display: flex; gap: 12px; margin-top: 24px; width: 100%; padding: 0 24px; }
+  .skip-btn {
+    flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; color: var(--muted); font-family: 'Nunito', sans-serif;
+    font-size: 1rem; font-weight: 700; padding: 14px; cursor: pointer; transition: all 0.2s;
+  }
+  .next-ob-btn {
+    flex: 2; background: linear-gradient(135deg, var(--sky), var(--purple));
+    border: none; border-radius: 14px; color: white;
+    font-family: 'Fredoka One', cursive; font-size: 1.1rem;
+    padding: 14px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(14,165,233,0.35); transition: all 0.2s;
+  }
+  .next-ob-btn:hover { transform: translateY(-2px); }
+  .next-ob-btn.start { background: linear-gradient(135deg, var(--accent), #f97316); box-shadow: 0 6px 20px rgba(245,158,11,0.4); }
+
+  /* GAME SCREEN */
+  #gameScreen { overflow-y: auto; align-items: center; justify-content: flex-start; padding-top: 20px; }
+  .game-wrapper { width: 100%; max-width: 520px; position: relative; z-index: 1; }
+  .header { text-align: center; margin-bottom: 28px; }
+  .header h1 { font-family: 'Fredoka One', cursive; font-size: clamp(2rem,7vw,2.8rem); color: var(--accent); letter-spacing: 1px; text-shadow: 0 0 30px rgba(245,158,11,0.4); }
+  .header p { color: var(--muted); font-size: 0.9rem; margin-top: 4px; font-weight: 600; }
+  .scorebar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--card); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; padding: 10px 18px; margin-bottom: 20px; font-weight: 700; font-size: 0.85rem;
+  }
+  .scorebar .item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .scorebar .label { color: var(--muted); font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; }
+  .scorebar .value { color: var(--accent); font-size: 1.1rem; font-family: 'Fredoka One', cursive; }
+  .scorebar .value.correct { color: var(--green); }
+  .scorebar .value.wrong   { color: var(--red); }
+  .progress-track { background: rgba(255,255,255,0.08); border-radius: 99px; height: 6px; margin-bottom: 22px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--sky), var(--accent)); border-radius: 99px; transition: width 0.5s ease; }
+  .card { background: var(--card); border: 1px solid rgba(255,255,255,0.08); border-radius: 22px; padding: 28px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: slideUp 0.4s ease; }
+  @keyframes slideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+  .question-num { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 10px; }
+  .question-text { font-family: 'Fredoka One', cursive; font-size: clamp(1.2rem,4vw,1.6rem); color: white; line-height: 1.4; margin-bottom: 22px; }
+  .word-hint { display: inline-block; color: var(--sky); font-size: clamp(1.5rem,6vw,2rem); letter-spacing: 4px; font-family: 'Fredoka One', cursive; background: rgba(14,165,233,0.1); padding: 6px 16px; border-radius: 10px; border: 1px solid rgba(14,165,233,0.25); margin-bottom: 24px; }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .opt-btn { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 14px; color: var(--text); font-family: 'Nunito', sans-serif; font-size: clamp(0.95rem,3vw,1.1rem); font-weight: 700; padding: 14px 10px; cursor: pointer; transition: all 0.18s ease; letter-spacing: 0.5px; text-align: center; }
+  .opt-btn:hover:not(:disabled) { background: rgba(14,165,233,0.15); border-color: var(--sky); transform: translateY(-2px); }
+  .opt-btn.correct { background: rgba(34,197,94,0.2); border-color: var(--green); color: var(--green); animation: pulse-green 0.4s ease; }
+  .opt-btn.wrong   { background: rgba(239,68,68,0.18); border-color: var(--red); color: var(--red); animation: shake 0.35s ease; }
+  @keyframes pulse-green { 0%,100% { box-shadow:0 0 0 0 rgba(34,197,94,0.4); } 50% { box-shadow:0 0 0 10px rgba(34,197,94,0); } }
+  @keyframes shake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-6px); } 75% { transform:translateX(6px); } }
+  .feedback { margin-top: 18px; padding: 12px 16px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; display: none; align-items: center; gap: 10px; }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  .feedback.show       { display: flex; animation: fadeIn 0.3s ease; }
+  .feedback.correct-fb { background: rgba(34,197,94,0.15); color: var(--green); }
+  .feedback.wrong-fb   { background: rgba(239,68,68,0.12); color: var(--red); }
+  .feedback .icon      { font-size: 1.3rem; }
+  .next-btn { margin-top: 20px; width: 100%; background: linear-gradient(135deg, var(--sky), #6366f1); border: none; border-radius: 14px; color: white; font-family: 'Fredoka One', cursive; font-size: 1.1rem; padding: 14px; cursor: pointer; transition: all 0.2s; display: none; box-shadow: 0 6px 20px rgba(14,165,233,0.3); }
+  .next-btn.show { display: block; animation: fadeIn 0.3s ease; }
+  .result { display: none; text-align: center; animation: slideUp 0.5s ease; }
+  .result.show { display: block; }
+  .result .trophy { font-size: 4rem; margin-bottom: 12px; }
+  .result h2 { font-family: 'Fredoka One', cursive; font-size: 2rem; color: var(--accent); margin-bottom: 8px; }
+  .result .final-score { font-size: 3rem; font-family: 'Fredoka One', cursive; color: white; margin: 12px 0; }
+  .result .final-score span { color: var(--sky); }
+  .result p { color: var(--muted); font-size: 0.95rem; margin-bottom: 24px; }
+  .restart-btn { background: linear-gradient(135deg, var(--accent), #f97316); border: none; border-radius: 14px; color: white; font-family: 'Fredoka One', cursive; font-size: 1.2rem; padding: 14px 36px; cursor: pointer; box-shadow: 0 6px 20px rgba(245,158,11,0.35); transition: all 0.2s; }
+  .quiz-section { transition: opacity 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<!-- LAUNCH SCREEN -->
+<div class="screen" id="launchScreen">
+  <div class="launch-glow"></div>
+  <div class="launch-emoji">🌿</div>
+  <h1 class="launch-title">Spell Quest</h1>
+  <p class="launch-sub">Master Every Word ✨</p>
+  <div class="launch-loader">
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <p class="loader-text">Loading...</p>
+  </div>
+</div>
+
+<!-- ONBOARDING SCREEN -->
+<div class="screen hidden" id="onboardingScreen">
+  <div class="onboard-wrapper">
+    <div class="slides-container">
+      <div class="slides-track" id="slidesTrack">
+
+        <!-- Slide 1 -->
+        <div class="slide">
+          <div class="slide-emoji">📖</div>
+          <div class="slide-tag">Welcome</div>
+          <h2>Learn to Spell <span>Like a Pro!</span></h2>
+          <p>Fun spelling quiz game with 44+ words. Test your knowledge and improve every day!</p>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="slide">
+          <div class="slide-emoji">🎮</div>
+          <div class="slide-tag">How to Play</div>
+          <h2>Simple & <span>Fun Rules</span></h2>
+          <div class="feature-cards">
+            <div class="feat-card">
+              <span class="feat-icon">🔤</span>
+              <div><div class="feat-title">See the Hint</div><div class="feat-desc">First letter shown, guess the rest!</div></div>
+            </div>
+            <div class="feat-card">
+              <span class="feat-icon">👆</span>
+              <div><div class="feat-title">Pick the Right Spelling</div><div class="feat-desc">Choose from 4 options — only 1 is correct</div></div>
+            </div>
+            <div class="feat-card">
+              <span class="feat-icon">🏆</span>
+              <div><div class="feat-title">Score Points</div><div class="feat-desc">10 questions per round — beat your best!</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="slide">
+          <div class="slide-emoji">🚀</div>
+          <div class="slide-tag">Ready?</div>
+          <h2>You're All <span>Set to Go!</span></h2>
+          <p>Challenge yourself, learn new spellings, and become a Spelling Champion! 🌟</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="dots">
+      <div class="dot active" onclick="goToSlide(0)"></div>
+      <div class="dot"        onclick="goToSlide(1)"></div>
+      <div class="dot"        onclick="goToSlide(2)"></div>
+    </div>
+
+    <div class="onboard-nav">
+      <button class="skip-btn" id="skipBtn" onclick="startGame()">Skip</button>
+      <button class="next-ob-btn" id="nextObBtn" onclick="nextSlide()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen hidden" id="gameScreen">
+  <div class="game-wrapper">
+    <div class="header">
+      <h1>🌿 Spell Quest</h1>
+      <p>Choose the correct spelling!</p>
+    </div>
+    <div class="quiz-section" id="quizSection">
+      <div class="scorebar">
+        <div class="item"><span class="label">Question</span><span class="value" id="qNum">1/10</span></div>
+        <div class="item"><span class="label">✅ Correct</span><span class="value correct" id="scoreCorrect">0</span></div>
+        <div class="item"><span class="label">❌ Wrong</span><span class="value wrong" id="scoreWrong">0</span></div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="card" id="card">
+        <div class="question-num" id="questionNum">Question 1 of 10</div>
+        <div class="question-text">Sahi spelling chuniye:</div>
+        <div class="word-hint" id="wordHint">_ _ _ _ _</div>
+        <div class="options" id="optionsGrid"></div>
+        <div class="feedback" id="feedback">
+          <span class="icon" id="feedbackIcon"></span>
+          <span id="feedbackText"></span>
+        </div>
+        <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Agla Sawaal →</button>
+      </div>
+    </div>
+    <div class="result" id="resultSection">
+      <div class="trophy" id="trophy">🏆</div>
+      <h2 id="resultTitle">Shabash!</h2>
+      <div class="final-score"><span id="finalCorrect">0</span> / <span>10</span></div>
+      <p id="resultMsg">Great spelling skills!</p>
+      <button class="restart-btn" onclick="restartQuiz()">🔄 Phir Khelein</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// STARS
+function makeStars() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${(Math.random()*3+1.5).toFixed(1)}s;animation-delay:${(Math.random()*4).toFixed(1)}s`;
+    c.appendChild(s);
+  }
+}
+
+// SCREEN MANAGER
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+// LAUNCH → ONBOARDING after 2.5s
+setTimeout(() => showScreen('onboardingScreen'), 2500);
+
+// ONBOARDING
+let currentSlide = 0;
+function goToSlide(index) {
+  currentSlide = index;
+  document.getElementById('slidesTrack').style.transform = `translateX(-${index * 100}%)`;
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
+  const nb = document.getElementById('nextObBtn');
+  const sb = document.getElementById('skipBtn');
+  if (index === 2) {
+    nb.textContent = '🚀 Start Playing!';
+    nb.classList.add('start');
+    sb.style.display = 'none';
+  } else {
+    nb.textContent = 'Next →';
+    nb.classList.remove('start');
+    sb.style.display = '';
+  }
+}
+function nextSlide() {
+  if (currentSlide < 2) goToSlide(currentSlide + 1);
+  else startGame();
+}
+function startGame() {
+  showScreen('gameScreen');
+  pickQuestions();
+  loadQuestion();
+}
+
+// WORD BANK
+const words = [
+  { word:"Sky",         wrong:["Skey","Skky","Skie"] },
+  { word:"Air",         wrong:["Aer","Aire","Ari"] },
+  { word:"Wind",        wrong:["Wynd","Wend","Winnd"] },
+  { word:"Rain",        wrong:["Rane","Rayn","Rainn"] },
+  { word:"Snow",        wrong:["Snowe","Snaw","Snno"] },
+  { word:"Birds",       wrong:["Byrds","Birdes","Birrds"] },
+  { word:"Drizzle",     wrong:["Drizzal","Drizzel","Drizle"] },
+  { word:"Cloud",       wrong:["Cloude","Kload","Claud"] },
+  { word:"Sun",         wrong:["Sunn","Son","Sune"] },
+  { word:"Moon",        wrong:["Moun","Muun","Moone"] },
+  { word:"River",       wrong:["Rivar","Rivir","Rivver"] },
+  { word:"Fountain",    wrong:["Fontain","Fountin","Fountian"] },
+  { word:"Sea",         wrong:["See","Sie","Seaa"] },
+  { word:"Ocean",       wrong:["Oceen","Ocian","Oshean"] },
+  { word:"Dawn",        wrong:["Doun","Daun","Dawan"] },
+  { word:"Dusk",        wrong:["Dask","Duusk","Dusck"] },
+  { word:"Morning",     wrong:["Mornning","Morrning","Morening"] },
+  { word:"Noon",        wrong:["Nune","Nuun","Noone"] },
+  { word:"Evening",     wrong:["Evning","Evining","Evenning"] },
+  { word:"Night",       wrong:["Nite","Niight","Nightt"] },
+  { word:"Tree",        wrong:["Trea","Tri","Treee"] },
+  { word:"Plant",       wrong:["Plent","Plaant","Plannt"] },
+  { word:"Forest",      wrong:["Forrest","Forast","Forset"] },
+  { word:"Mountain",    wrong:["Mountian","Mountin","Mowntain"] },
+  { word:"Hill",        wrong:["Hil","Hiil","Hille"] },
+  { word:"Valley",      wrong:["Valey","Vallay","Vallley"] },
+  { word:"Stone",       wrong:["Stoan","Stoone","Stonne"] },
+  { word:"Rock",        wrong:["Roke","Rokk","Rocc"] },
+  { word:"Soil",        wrong:["Soile","Soyl","Soill"] },
+  { word:"Stars",       wrong:["Stares","Starrs","Staars"] },
+  { word:"Branch",      wrong:["Brunch","Barnch","Bransh"] },
+  { word:"Fruit",       wrong:["Frut","Fruut","Froit"] },
+  { word:"Fog",         wrong:["Fogg","Foge","Faug"] },
+  { word:"Dew",         wrong:["Due","Dwe","Diw"] },
+  { word:"Grass",       wrong:["Grasse","Gras","Graas"] },
+  { word:"Shrub",       wrong:["Shrube","Shrubb","Shrob"] },
+  { word:"Flower",      wrong:["Flawer","Flowur","Flowar"] },
+  { word:"Hail",        wrong:["Hale","Haile","Haill"] },
+  { word:"Shower",      wrong:["Showir","Shouver","Showar"] },
+  { word:"Rays",        wrong:["Rayes","Rayz","Rais"] },
+  { word:"Altitude",    wrong:["Altitood","Altittude","Altitiude"] },
+  { word:"Temperature", wrong:["Temperture","Temprature","Tempurature"] },
+  { word:"Atmosphere",  wrong:["Atmosfere","Atmosfhere","Atmoshpere"] },
+  { word:"Creeper",     wrong:["Crieper","Creepir","Crepar"] },
+];
+
+// GAME LOGIC
+let questions=[], current=0, correct=0, wrong=0, answered=false;
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
+function buildHint(word){ return word.split('').map((c,i)=>i===0?c:'_').join(' '); }
+function pickQuestions(){ questions = shuffle(words).slice(0,10); }
+
+function loadQuestion(){
+  answered = false;
+  const q = questions[current];
+  document.getElementById('questionNum').textContent = `Question ${current+1} of 10`;
+  document.getElementById('qNum').textContent = `${current+1}/10`;
+  document.getElementById('wordHint').textContent = buildHint(q.word);
+  const options = shuffle([q.word, ...q.wrong]);
+  const grid = document.getElementById('optionsGrid');
+  grid.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn'; btn.textContent = opt;
+    btn.onclick = () => checkAnswer(btn, opt, q.word);
+    grid.appendChild(btn);
+  });
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('nextBtn').className = 'next-btn';
+  document.getElementById('progressFill').style.width = (current/10*100)+'%';
+}
+
+function checkAnswer(btn, chosen, correctWord){
+  if(answered) return;
+  answered = true;
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  const fb = document.getElementById('feedback');
+  if(chosen === correctWord){
+    correct++;
+    btn.classList.add('correct');
+    fb.className = 'feedback correct-fb show';
+    document.getElementById('feedbackIcon').textContent = '🎉';
+    document.getElementById('feedbackText').textContent = `Bilkul sahi! "${correctWord}" correct hai!`;
+    document.getElementById('scoreCorrect').textContent = correct;
+  } else {
+    wrong++;
+    btn.classList.add('wrong');
+    document.querySelectorAll('.opt-btn').forEach(b=>{ if(b.textContent===correctWord) b.classList.add('correct'); });
+    fb.className = 'feedback wrong-fb show';
+    document.getElementById('feedbackIcon').textContent = '❌';
+    document.getElementById('feedbackText').textContent = `Galat! Sahi spelling hai: "${correctWord}"`;
+    document.getElementById('scoreWrong').textContent = wrong;
+  }
+  if(current < 9){ document.getElementById('nextBtn').className = 'next-btn show'; }
+  else { setTimeout(showResult, 1000); }
+}
+
+function nextQuestion(){
+  current++;
+  const card = document.getElementById('card');
+  card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+  loadQuestion();
+}
+
+function showResult(){
+  document.getElementById('quizSection').style.opacity = '0';
+  setTimeout(()=>{
+    document.getElementById('quizSection').style.display = 'none';
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('resultSection').className = 'result show';
+    document.getElementById('finalCorrect').textContent = correct;
+    const pct = correct/10;
+    if(pct===1)      { document.getElementById('trophy').textContent='🏆'; document.getElementById('resultTitle').textContent='Perfect Score!';   document.getElementById('resultMsg').textContent='Aap spelling champion hain! 🌟'; }
+    else if(pct>=0.7){ document.getElementById('trophy').textContent='🌟'; document.getElementById('resultTitle').textContent='Bahut Accha!';     document.getElementById('resultMsg').textContent='Kaafi acchi spelling hai aapki!'; }
+    else if(pct>=0.4){ document.getElementById('trophy').textContent='👍'; document.getElementById('resultTitle').textContent='Theek Hai!';       document.getElementById('resultMsg').textContent='Thodi aur practice karein!'; }
+    else             { document.getElementById('trophy').textContent='📚'; document.getElementById('resultTitle').textContent='Practice Karein!'; document.getElementById('resultMsg').textContent='Roz padhne se spelling better hogi!'; }
+  }, 400);
+}
+
+function restartQuiz(){
+  current=0; correct=0; wrong=0;
+  document.getElementById('scoreCorrect').textContent = '0';
+  document.getElementById('scoreWrong').textContent = '0';
+  document.getElementById('resultSection').className = 'result';
+  const qs = document.getElementById('quizSection');
+  qs.style.display = ''; qs.style.opacity = '1';
+  pickQuestions(); loadQuestion();
+}
+
+makeStars();
+</script>
+</body>
+</html>
