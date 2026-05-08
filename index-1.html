@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spell Quest 🌿</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sky: #0ea5e9; --deep: #0c1a3a; --card: #162040;
+    --accent: #f59e0b; --green: #22c55e; --red: #ef4444;
+    --text: #e2e8f0; --muted: #94a3b8;
+  }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--deep); color: var(--text);
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px; overflow: hidden; position: relative;
+  }
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star {
+    position: absolute; border-radius: 50%; background: white;
+    animation: twinkle var(--d) ease-in-out infinite alternate; opacity: 0;
+  }
+  @keyframes twinkle {
+    from { opacity: 0.1; transform: scale(0.8); }
+    to   { opacity: 0.9; transform: scale(1.2); }
+  }
+  .wrapper { position: relative; z-index: 1; width: 100%; max-width: 520px; }
+  .header { text-align: center; margin-bottom: 28px; }
+  .header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 7vw, 2.8rem);
+    color: var(--accent); letter-spacing: 1px;
+    text-shadow: 0 0 30px rgba(245,158,11,0.4);
+  }
+  .header p { color: var(--muted); font-size: 0.9rem; margin-top: 4px; font-weight: 600; }
+  .scorebar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--card); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; padding: 10px 18px; margin-bottom: 20px;
+    font-weight: 700; font-size: 0.85rem;
+  }
+  .scorebar .item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .scorebar .label { color: var(--muted); font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; }
+  .scorebar .value { color: var(--accent); font-size: 1.1rem; font-family: 'Fredoka One', cursive; }
+  .scorebar .value.correct { color: var(--green); }
+  .scorebar .value.wrong   { color: var(--red); }
+  .progress-track {
+    background: rgba(255,255,255,0.08); border-radius: 99px;
+    height: 6px; margin-bottom: 22px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--sky), var(--accent));
+    border-radius: 99px; transition: width 0.5s ease;
+  }
+  .card {
+    background: var(--card); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px; padding: 28px 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: slideUp 0.4s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .question-num { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 10px; }
+  .question-text { font-family: 'Fredoka One', cursive; font-size: clamp(1.2rem, 4vw, 1.6rem); color: white; line-height: 1.4; margin-bottom: 22px; }
+  .word-hint {
+    display: inline-block; color: var(--sky);
+    font-size: clamp(1.5rem, 6vw, 2rem); letter-spacing: 4px;
+    font-family: 'Fredoka One', cursive;
+    background: rgba(14,165,233,0.1); padding: 6px 16px;
+    border-radius: 10px; border: 1px solid rgba(14,165,233,0.25); margin-bottom: 24px;
+  }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .opt-btn {
+    background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 14px; color: var(--text); font-family: 'Nunito', sans-serif;
+    font-size: clamp(0.95rem, 3vw, 1.1rem); font-weight: 700;
+    padding: 14px 10px; cursor: pointer; transition: all 0.18s ease;
+    letter-spacing: 0.5px; text-align: center;
+  }
+  .opt-btn:hover:not(:disabled) { background: rgba(14,165,233,0.15); border-color: var(--sky); transform: translateY(-2px); }
+  .opt-btn:active:not(:disabled) { transform: scale(0.97); }
+  .opt-btn.correct { background: rgba(34,197,94,0.2); border-color: var(--green); color: var(--green); animation: pulse-green 0.4s ease; }
+  .opt-btn.wrong   { background: rgba(239,68,68,0.18); border-color: var(--red);   color: var(--red);   animation: shake 0.35s ease; }
+  @keyframes pulse-green {
+    0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+    50%      { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%     { transform: translateX(-6px); }
+    75%     { transform: translateX(6px); }
+  }
+  .feedback {
+    margin-top: 18px; padding: 12px 16px; border-radius: 12px;
+    font-weight: 700; font-size: 0.95rem; display: none;
+    align-items: center; gap: 10px; animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  .feedback.show       { display: flex; }
+  .feedback.correct-fb { background: rgba(34,197,94,0.15); color: var(--green); }
+  .feedback.wrong-fb   { background: rgba(239,68,68,0.12);  color: var(--red);  }
+  .feedback .icon      { font-size: 1.3rem; }
+  .next-btn {
+    margin-top: 20px; width: 100%;
+    background: linear-gradient(135deg, var(--sky), #6366f1);
+    border: none; border-radius: 14px; color: white;
+    font-family: 'Fredoka One', cursive; font-size: 1.1rem;
+    padding: 14px; cursor: pointer; letter-spacing: 0.5px;
+    transition: all 0.2s; display: none;
+    box-shadow: 0 6px 20px rgba(14,165,233,0.3);
+  }
+  .next-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(14,165,233,0.4); }
+  .next-btn.show  { display: block; animation: fadeIn 0.3s ease; }
+  .result { display: none; text-align: center; animation: slideUp 0.5s ease; }
+  .result.show { display: block; }
+  .result .trophy { font-size: 4rem; margin-bottom: 12px; }
+  .result h2 { font-family: 'Fredoka One', cursive; font-size: 2rem; color: var(--accent); margin-bottom: 8px; }
+  .result .final-score { font-size: 3rem; font-family: 'Fredoka One', cursive; color: white; margin: 12px 0; }
+  .result .final-score span { color: var(--sky); }
+  .result p { color: var(--muted); font-size: 0.95rem; margin-bottom: 24px; }
+  .restart-btn {
+    background: linear-gradient(135deg, var(--accent), #f97316);
+    border: none; border-radius: 14px; color: white;
+    font-family: 'Fredoka One', cursive; font-size: 1.2rem;
+    padding: 14px 36px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(245,158,11,0.35); transition: all 0.2s;
+  }
+  .restart-btn:hover { transform: translateY(-2px); }
+  .quiz-section { transition: opacity 0.3s ease; }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="wrapper">
+  <div class="header">
+    <h1>🌿 Spell Quest</h1>
+    <p>Choose the correct spelling!</p>
+  </div>
+  <div class="quiz-section" id="quizSection">
+    <div class="scorebar">
+      <div class="item"><span class="label">Question</span><span class="value" id="qNum">1/10</span></div>
+      <div class="item"><span class="label">✅ Correct</span><span class="value correct" id="scoreCorrect">0</span></div>
+      <div class="item"><span class="label">❌ Wrong</span><span class="value wrong" id="scoreWrong">0</span></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="card" id="card">
+      <div class="question-num" id="questionNum">Question 1 of 10</div>
+      <div class="question-text">Sahi spelling chuniye:</div>
+      <div class="word-hint" id="wordHint">_ _ _ _ _</div>
+      <div class="options" id="optionsGrid"></div>
+      <div class="feedback" id="feedback">
+        <span class="icon" id="feedbackIcon"></span>
+        <span id="feedbackText"></span>
+      </div>
+      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Agla Sawaal →</button>
+    </div>
+  </div>
+  <div class="result" id="resultSection">
+    <div class="trophy" id="trophy">🏆</div>
+    <h2 id="resultTitle">Shabash!</h2>
+    <div class="final-score"><span id="finalCorrect">0</span> / <span>10</span></div>
+    <p id="resultMsg">Great spelling skills!</p>
+    <button class="restart-btn" onclick="restartQuiz()">🔄 Phir Khelein</button>
+  </div>
+</div>
+<script>
+const words = [
+  { word:"Sky",         wrong:["Skey","Skky","Skie"] },
+  { word:"Air",         wrong:["Aer","Aire","Ari"] },
+  { word:"Wind",        wrong:["Wynd","Wend","Winnd"] },
+  { word:"Rain",        wrong:["Rane","Rayn","Rainn"] },
+  { word:"Snow",        wrong:["Snowe","Snaw","Snno"] },
+  { word:"Birds",       wrong:["Byrds","Birdes","Birrds"] },
+  { word:"Drizzle",     wrong:["Drizzal","Drizzel","Drizle"] },
+  { word:"Cloud",       wrong:["Cloude","Kload","Claud"] },
+  { word:"Sun",         wrong:["Sunn","Son","Sune"] },
+  { word:"Moon",        wrong:["Moun","Muun","Moone"] },
+  { word:"River",       wrong:["Rivar","Rivir","Rivver"] },
+  { word:"Fountain",    wrong:["Fontain","Fountin","Fountian"] },
+  { word:"Sea",         wrong:["See","Sie","Seaa"] },
+  { word:"Ocean",       wrong:["Oceen","Ocian","Oshean"] },
+  { word:"Dawn",        wrong:["Doun","Daun","Dawan"] },
+  { word:"Dusk",        wrong:["Dask","Duusk","Dusck"] },
+  { word:"Morning",     wrong:["Mornning","Morrning","Morening"] },
+  { word:"Noon",        wrong:["Nune","Nuun","Noone"] },
+  { word:"Evening",     wrong:["Evning","Evining","Evenning"] },
+  { word:"Night",       wrong:["Nite","Niight","Nightt"] },
+  { word:"Tree",        wrong:["Trea","Tri","Treee"] },
+  { word:"Plant",       wrong:["Plent","Plaant","Plannt"] },
+  { word:"Forest",      wrong:["Forrest","Forast","Forset"] },
+  { word:"Mountain",    wrong:["Mountian","Mountin","Mowntain"] },
+  { word:"Hill",        wrong:["Hil","Hiil","Hille"] },
+  { word:"Valley",      wrong:["Valey","Vallay","Vallley"] },
+  { word:"Stone",       wrong:["Stoan","Stoone","Stonne"] },
+  { word:"Rock",        wrong:["Roke","Rokk","Rocc"] },
+  { word:"Soil",        wrong:["Soile","Soyl","Soill"] },
+  { word:"Stars",       wrong:["Stares","Starrs","Staars"] },
+  { word:"Branch",      wrong:["Brunch","Barnch","Bransh"] },
+  { word:"Fruit",       wrong:["Frut","Fruut","Froit"] },
+  { word:"Fog",         wrong:["Fogg","Foge","Faug"] },
+  { word:"Dew",         wrong:["Due","Dwe","Diw"] },
+  { word:"Grass",       wrong:["Grasse","Gras","Graas"] },
+  { word:"Shrub",       wrong:["Shrube","Shrubb","Shrob"] },
+  { word:"Flower",      wrong:["Flawer","Flowur","Flowar"] },
+  { word:"Hail",        wrong:["Hale","Haile","Haill"] },
+  { word:"Shower",      wrong:["Showir","Shouver","Showar"] },
+  { word:"Rays",        wrong:["Rayes","Rayz","Rais"] },
+  { word:"Altitude",    wrong:["Altitood","Altittude","Altitiude"] },
+  { word:"Temperature", wrong:["Temperture","Temprature","Tempurature"] },
+  { word:"Atmosphere",  wrong:["Atmosfere","Atmosfhere","Atmoshpere"] },
+  { word:"Creeper",     wrong:["Crieper","Creepir","Crepar"] },
+];
+
+let questions=[], current=0, correct=0, wrong=0, answered=false;
+
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
+function buildHint(word){ return word.split('').map((c,i)=>i===0?c.toUpperCase():'_').join(' '); }
+
+function pickQuestions(){ questions = shuffle(words).slice(0,10); }
+
+function loadQuestion(){
+  answered = false;
+  const q = questions[current];
+  document.getElementById('questionNum').textContent = `Question ${current+1} of 10`;
+  document.getElementById('qNum').textContent = `${current+1}/10`;
+  document.getElementById('wordHint').textContent = buildHint(q.word);
+  const options = shuffle([q.word, ...q.wrong]);
+  const grid = document.getElementById('optionsGrid');
+  grid.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(btn, opt, q.word);
+    grid.appendChild(btn);
+  });
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('nextBtn').className = 'next-btn';
+  document.getElementById('progressFill').style.width = (current/10*100)+'%';
+}
+
+function checkAnswer(btn, chosen, correctWord){
+  if(answered) return;
+  answered = true;
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  const fb = document.getElementById('feedback');
+  if(chosen === correctWord){
+    correct++;
+    btn.classList.add('correct');
+    fb.className = 'feedback correct-fb show';
+    document.getElementById('feedbackIcon').textContent = '🎉';
+    document.getElementById('feedbackText').textContent = `Bilkul sahi! "${correctWord}" correct hai!`;
+    document.getElementById('scoreCorrect').textContent = correct;
+  } else {
+    wrong++;
+    btn.classList.add('wrong');
+    document.querySelectorAll('.opt-btn').forEach(b=>{ if(b.textContent===correctWord) b.classList.add('correct'); });
+    fb.className = 'feedback wrong-fb show';
+    document.getElementById('feedbackIcon').textContent = '❌';
+    document.getElementById('feedbackText').textContent = `Galat! Sahi spelling hai: "${correctWord}"`;
+    document.getElementById('scoreWrong').textContent = wrong;
+  }
+  if(current < 9){ document.getElementById('nextBtn').className = 'next-btn show'; }
+  else { setTimeout(showResult, 1000); }
+}
+
+function nextQuestion(){
+  current++;
+  const card = document.getElementById('card');
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = '';
+  loadQuestion();
+}
+
+function showResult(){
+  document.getElementById('quizSection').style.opacity = '0';
+  setTimeout(()=>{
+    document.getElementById('quizSection').style.display = 'none';
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('resultSection').className = 'result show';
+    document.getElementById('finalCorrect').textContent = correct;
+    const pct = correct/10;
+    const trophy = document.getElementById('trophy');
+    const title  = document.getElementById('resultTitle');
+    const msg    = document.getElementById('resultMsg');
+    if(pct===1)      { trophy.textContent='🏆'; title.textContent='Perfect Score!';   msg.textContent='Aap spelling champion hain! 🌟'; }
+    else if(pct>=0.7){ trophy.textContent='🌟'; title.textContent='Bahut Accha!';     msg.textContent='Kaafi acchi spelling hai aapki!'; }
+    else if(pct>=0.4){ trophy.textContent='👍'; title.textContent='Theek Hai!';       msg.textContent='Thodi aur practice karein!'; }
+    else             { trophy.textContent='📚'; title.textContent='Practice Karein!'; msg.textContent='Roz padhne se spelling better hogi!'; }
+  }, 400);
+}
+
+function restartQuiz(){
+  current=0; correct=0; wrong=0;
+  document.getElementById('scoreCorrect').textContent = '0';
+  document.getElementById('scoreWrong').textContent   = '0';
+  document.getElementById('resultSection').className  = 'result';
+  const qs = document.getElementById('quizSection');
+  qs.style.display = ''; qs.style.opacity = '1';
+  pickQuestions(); loadQuestion();
+}
+
+function makeStars(){
+  const c = document.getElementById('stars');
+  for(let i=0;i<80;i++){
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random()*2.5+0.5;
+    s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${(Math.random()*3+1.5).toFixed(1)}s;animation-delay:${(Math.random()*4).toFixed(1)}s`;
+    c.appendChild(s);
+  }
+}
+
+makeStars(); pickQuestions(); loadQuestion();
+</script>
+</body>
+</html>
