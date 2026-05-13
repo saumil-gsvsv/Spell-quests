@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — Spell Quest 🌿</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --sky:#0ea5e9;--deep:#0c1a3a;--card:#162040;--accent:#f59e0b;
+    --green:#22c55e;--red:#ef4444;--text:#e2e8f0;--muted:#94a3b8;--purple:#8b5cf6;
+  }
+  body{font-family:'Nunito',sans-serif;background:var(--deep);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+  /* STARS */
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
+  .star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d) ease-in-out infinite alternate;opacity:0;}
+  @keyframes twinkle{from{opacity:.1;transform:scale(.8);}to{opacity:.9;transform:scale(1.2);}}
+
+  /* TOAST */
+  #toast{position:fixed;top:30px;left:50%;transform:translateX(-50%) translateY(-140px);z-index:99999;padding:14px 28px;border-radius:16px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;min-width:220px;max-width:320px;box-shadow:0 12px 40px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.4,0,.2,1);text-align:center;}
+  #toast.show{transform:translateX(-50%) translateY(0);}
+  #toast.success{background:var(--green);color:#fff;}
+  #toast.error{background:var(--red);color:#fff;}
+  #toast.info{background:var(--sky);color:#fff;}
+
+  /* PAGE WRAPPER */
+  .page{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 0 40px;}
+
+  /* TOP NAV */
+  .topnav{width:100%;max-width:520px;display:flex;align-items:center;padding:20px 20px 0;gap:12px;}
+  .topnav h2{font-family:'Fredoka One',cursive;font-size:1.5rem;color:white;flex:1;text-align:center;}
+  .back-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;padding:8px 14px;cursor:pointer;transition:.2s;}
+  .back-btn:hover{background:rgba(255,255,255,.14);}
+  .topnav-placeholder{width:70px;}
+
+  /* HERO CARD */
+  .hero{width:100%;max-width:520px;padding:20px 20px 0;}
+  .hero-card{background:linear-gradient(135deg,#162040 0%,#0f2454 100%);border:1px solid rgba(255,255,255,.09);border-radius:24px;padding:28px 24px 22px;position:relative;overflow:hidden;animation:slideUp .5s ease both;}
+  .hero-card::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(14,165,233,.18) 0%,transparent 70%);border-radius:50%;}
+  .hero-card::after{content:'';position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(245,158,11,.1) 0%,transparent 70%);border-radius:50%;}
+  .avatar-row{display:flex;align-items:flex-end;gap:16px;margin-bottom:16px;position:relative;z-index:1;}
+  .avatar-wrap{position:relative;flex-shrink:0;}
+  .avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--purple));display:flex;align-items:center;justify-content:center;font-size:2rem;border:3px solid rgba(255,255,255,.15);box-shadow:0 8px 30px rgba(14,165,233,.3);}
+  .avatar-badge{position:absolute;bottom:2px;right:2px;width:22px;height:22px;background:var(--green);border-radius:50%;border:2px solid var(--deep);display:flex;align-items:center;justify-content:center;font-size:.6rem;}
+  .avatar-info{flex:1;}
+  .avatar-info h3{font-family:'Fredoka One',cursive;font-size:1.5rem;color:white;line-height:1.1;margin-bottom:2px;}
+  .avatar-info .handle{color:var(--muted);font-size:.8rem;font-weight:600;}
+  .avatar-info .joined{color:var(--sky);font-size:.75rem;font-weight:700;margin-top:4px;display:flex;align-items:center;gap:4px;}
+  .edit-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:var(--text);font-family:'Nunito',sans-serif;font-size:.8rem;font-weight:700;padding:8px 14px;cursor:pointer;flex-shrink:0;align-self:flex-start;transition:.2s;}
+  .edit-btn:hover{background:rgba(14,165,233,.15);border-color:var(--sky);}
+
+  /* STATS ROW */
+  .stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px;position:relative;z-index:1;}
+  .stat-box{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 8px;text-align:center;}
+  .stat-val{font-family:'Fredoka One',cursive;font-size:1.4rem;display:block;line-height:1;}
+  .stat-val.gold{color:var(--accent);}
+  .stat-val.green{color:var(--green);}
+  .stat-val.blue{color:var(--sky);}
+  .stat-label{color:var(--muted);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;display:block;}
+
+  /* LEVEL BADGE */
+  .level-bar-wrap{margin-top:14px;position:relative;z-index:1;}
+  .level-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .level-name{font-family:'Fredoka One',cursive;font-size:.9rem;color:var(--accent);display:flex;align-items:center;gap:6px;}
+  .level-xp{color:var(--muted);font-size:.75rem;font-weight:700;}
+  .level-track{background:rgba(255,255,255,.08);border-radius:99px;height:8px;overflow:hidden;}
+  .level-fill{height:100%;width:68%;background:linear-gradient(90deg,var(--sky),var(--accent));border-radius:99px;animation:lvlgrow .8s ease .3s both;}
+  @keyframes lvlgrow{from{width:0%}to{width:68%}}
+
+  /* SECTIONS */
+  .section{width:100%;max-width:520px;padding:20px 20px 0;}
+  .section-title{font-size:.7rem;font-weight:800;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;padding-left:4px;}
+
+  /* ACHIEVEMENT CHIPS */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{background:var(--card);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:7px;font-size:.82rem;font-weight:700;transition:.2s;cursor:default;}
+  .chip:hover{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.07);}
+  .chip-ico{font-size:1.1rem;}
+  .chip-txt{color:var(--text);}
+  .chip-sub{color:var(--muted);font-size:.7rem;font-weight:600;margin-top:1px;}
+
+  /* MENU ITEMS */
+  .menu-list{display:flex;flex-direction:column;gap:8px;}
+  .menu-item{background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:.2s;animation:slideUp .5s ease both;}
+  .menu-item:hover{background:#1d2e56;border-color:rgba(255,255,255,.14);transform:translateX(3px);}
+  .menu-item:active{transform:scale(.98);}
+  .mi-ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+  .mi-ico.blue{background:rgba(14,165,233,.15);}
+  .mi-ico.green{background:rgba(34,197,94,.15);}
+  .mi-ico.purple{background:rgba(139,92,246,.15);}
+  .mi-ico.amber{background:rgba(245,158,11,.15);}
+  .mi-ico.red{background:rgba(239,68,68,.12);}
+  .mi-txt{flex:1;}
+  .mi-title{font-weight:700;font-size:.92rem;color:var(--text);}
+  .mi-sub{color:var(--muted);font-size:.75rem;font-weight:600;margin-top:1px;}
+  .mi-arrow{color:var(--muted);font-size:1rem;}
+  .mi-badge{background:var(--red);color:white;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:99px;font-family:'Nunito',sans-serif;}
+
+  /* LOGOUT BUTTON */
+  .logout-wrap{width:100%;max-width:520px;padding:20px 20px 0;}
+  .lo-btn{width:100%;background:rgba(239,68,68,.1);border:1.5px solid rgba(239,68,68,.25);border-radius:16px;color:var(--red);font-family:'Fredoka One',cursive;font-size:1.1rem;padding:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s;}
+  .lo-btn:hover{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.45);}
+  .lo-btn:active{transform:scale(.98);}
+
+  /* VERSION */
+  .version{color:var(--muted);font-size:.72rem;font-weight:600;text-align:center;margin-top:20px;opacity:.6;}
+
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fi{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div id="toast">Message</div>
+
+<div class="page">
+
+  <!-- TOP NAV -->
+  <div class="topnav">
+    <button class="back-btn" onclick="history.back()">← Back</button>
+    <h2>My Profile</h2>
+    <div class="topnav-placeholder"></div>
+  </div>
+
+  <!-- HERO CARD -->
+  <div class="hero">
+    <div class="hero-card">
+      <div class="avatar-row">
+        <div class="avatar-wrap">
+          <div class="avatar" id="avatarEl">👤</div>
+          <div class="avatar-badge">✓</div>
+        </div>
+        <div class="avatar-info">
+          <h3 id="profName">Loading...</h3>
+          <div class="handle" id="profHandle">@spellmaster</div>
+          <div class="joined">🌿 <span>Joined May 2025</span></div>
+        </div>
+        <button class="edit-btn" onclick="toast('✏️ Edit profile coming soon!','info')">Edit</button>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <span class="stat-val gold" id="statGames">0</span>
+          <span class="stat-label">Games</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-val green" id="statBest">0/10</span>
+          <span class="stat-label">Best Score</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-val blue" id="statAccuracy">0%</span>
+          <span class="stat-label">Accuracy</span>
+        </div>
+      </div>
+
+      <!-- LEVEL BAR -->
+      <div class="level-bar-wrap">
+        <div class="level-top">
+          <div class="level-name">⚡ Level 7 — Spell Warrior</div>
+          <div class="level-xp">340 / 500 XP</div>
+        </div>
+        <div class="level-track"><div class="level-fill"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACHIEVEMENTS -->
+  <div class="section">
+    <div class="section-title">Achievements</div>
+    <div class="chips">
+      <div class="chip"><span class="chip-ico">🏆</span><div><div class="chip-txt">Perfect Score</div><div class="chip-sub">10/10 once</div></div></div>
+      <div class="chip"><span class="chip-ico">🔥</span><div><div class="chip-txt">On Fire</div><div class="chip-sub">5 in a row</div></div></div>
+      <div class="chip"><span class="chip-ico">⚡</span><div><div class="chip-txt">Speed Speller</div><div class="chip-sub">&lt;2s avg</div></div></div>
+      <div class="chip"><span class="chip-ico">🌟</span><div><div class="chip-txt">First Win</div><div class="chip-sub">Completed</div></div></div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div class="section">
+    <div class="section-title">Game</div>
+    <div class="menu-list">
+      <div class="menu-item" style="animation-delay:.05s" onclick="toast('🎮 Starting new game...','info')">
+        <div class="mi-ico blue">🎮</div>
+        <div class="mi-txt"><div class="mi-title">Play Spell Quest</div><div class="mi-sub">Start a new 10-question round</div></div>
+        <span class="mi-arrow">›</span>
+      </div>
+      <div class="menu-item" style="animation-delay:.1s" onclick="toast('📊 Leaderboard coming soon!','info')">
+        <div class="mi-ico amber">📊</div>
+        <div class="mi-txt"><div class="mi-title">Leaderboard</div><div class="mi-sub">See how you rank globally</div></div>
+        <span class="mi-arrow">›</span>
+      </div>
+      <div class="menu-item" style="animation-delay:.15s" onclick="toast('📖 Word list coming soon!','info')">
+        <div class="mi-ico green">📖</div>
+        <div class="mi-txt"><div class="mi-title">Word Practice</div><div class="mi-sub">44+ words to master</div></div>
+        <span class="mi-badge">44</span>
+        <span class="mi-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="section">
+    <div class="section-title">Settings</div>
+    <div class="menu-list">
+      <div class="menu-item" style="animation-delay:.2s" onclick="toast('🔔 Notifications coming soon!','info')">
+        <div class="mi-ico purple">🔔</div>
+        <div class="mi-txt"><div class="mi-title">Notifications</div><div class="mi-sub">Daily reminders & alerts</div></div>
+        <span class="mi-badge">On</span>
+        <span class="mi-arrow">›</span>
+      </div>
+      <div class="menu-item" style="animation-delay:.25s" onclick="toast('🌙 Dark mode is always on!','info')">
+        <div class="mi-ico blue">🌙</div>
+        <div class="mi-txt"><div class="mi-title">Appearance</div><div class="mi-sub">Dark mode active</div></div>
+        <span class="mi-arrow">›</span>
+      </div>
+      <div class="menu-item" style="animation-delay:.3s" onclick="toast('🔒 Privacy settings coming soon!','info')">
+        <div class="mi-ico green">🔒</div>
+        <div class="mi-txt"><div class="mi-title">Privacy & Security</div><div class="mi-sub">Manage your account security</div></div>
+        <span class="mi-arrow">›</span>
+      </div>
+      <div class="menu-item" style="animation-delay:.35s" onclick="toast('❓ Help & FAQ coming soon!','info')">
+        <div class="mi-ico amber">❓</div>
+        <div class="mi-txt"><div class="mi-title">Help & Support</div><div class="mi-sub">FAQs and contact us</div></div>
+        <span class="mi-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGOUT -->
+  <div class="logout-wrap">
+    <button class="lo-btn" id="loBtn">👋 Logout</button>
+  </div>
+
+  <div class="version">Spell Quest v1.0 • Made with 🌿</div>
+</div>
+
+<script>
+  // Stars
+  (function(){
+    var c=document.getElementById('stars');
+    for(var i=0;i<80;i++){
+      var s=document.createElement('div'); s.className='star';
+      var sz=Math.random()*2.5+0.5;
+      s.style.cssText='width:'+sz+'px;height:'+sz+'px;top:'+Math.random()*100+'%;left:'+Math.random()*100+'%;--d:'+(Math.random()*3+1.5).toFixed(1)+'s;animation-delay:'+(Math.random()*4).toFixed(1)+'s';
+      c.appendChild(s);
+    }
+  })();
+
+  // Toast
+  var _tt;
+  function toast(msg,type){
+    var t=document.getElementById('toast');
+    t.textContent=msg; t.className=type+' show';
+    clearTimeout(_tt);
+    _tt=setTimeout(function(){t.className=type;},3200);
+  }
+
+  // Load stats from localStorage (compatible with Spell Quest's storage)
+  function loadStats(){
+    // Try to read games played and scores from localStorage
+    var gamesPlayed = parseInt(localStorage.getItem('sq_gamesPlayed') || '0');
+    var bestScore   = parseInt(localStorage.getItem('sq_bestScore')   || '0');
+    var totalCorr   = parseInt(localStorage.getItem('sq_totalCorr')   || '0');
+    var totalQ      = parseInt(localStorage.getItem('sq_totalQ')      || '0');
+    var accuracy    = totalQ > 0 ? Math.round(totalCorr / totalQ * 100) : 0;
+
+    document.getElementById('statGames').textContent    = gamesPlayed;
+    document.getElementById('statBest').textContent     = bestScore + '/10';
+    document.getElementById('statAccuracy').textContent = accuracy + '%';
+  }
+  loadStats();
+</script>
+
+<!-- FIREBASE MODULE — mirrors index.html -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey:            "AIzaSyBWo6kILr1csElklswjyOQBiXWAZvUUHJw",
+  authDomain:        "spell-quests.firebaseapp.com",
+  projectId:         "spell-quests",
+  storageBucket:     "spell-quests.firebasestorage.app",
+  messagingSenderId: "135586511928",
+  appId:             "1:135586511928:web:0c78a70ad00521ef9d7acd",
+  measurementId:     "G-VK1RY5EVVP"
+});
+const auth = getAuth(app);
+
+// Show user info when Firebase loads
+onAuthStateChanged(auth, function(user) {
+  if (user) {
+    var name   = user.displayName || user.email.split('@')[0];
+    var handle = '@' + name.toLowerCase().replace(/\s+/g,'');
+    var letter = name.charAt(0).toUpperCase();
+
+    document.getElementById('profName').textContent   = name;
+    document.getElementById('profHandle').textContent = handle;
+
+    // Swap emoji avatar for letter-based one
+    var av = document.getElementById('avatarEl');
+    av.textContent = letter;
+    av.style.fontSize = '2rem';
+    av.style.fontFamily = "'Fredoka One', cursive";
+  } else {
+    // Not logged in
+    document.getElementById('profName').textContent = 'Guest Player';
+    document.getElementById('profHandle').textContent = '@guest';
+  }
+});
+
+// Logout
+document.getElementById('loBtn').onclick = async function() {
+  await signOut(auth);
+  window.location.href = 'index.html';
+};
+</script>
+</body>
+</html>
