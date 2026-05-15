@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Spell Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#07091a;--bg2:#0d1128;--card:#131b35;--card2:#192040;
+  --border:#1f2d50;--accent:#5b9bff;--accent2:#8b5cf6;
+  --gold:#f5c842;--fire:#ff6b35;--green:#22c55e;--red:#ef4444;
+  --text:#eef0f8;--muted:#677092;
+  --glow:0 0 24px rgba(91,155,255,0.35);
+}
+html,body{height:100%;overflow:hidden;background:#07091a}
+body{font-family:'Nunito',sans-serif;color:var(--text);display:flex;align-items:center;justify-content:center}
+.app{width:100%;max-width:420px;height:100vh;max-height:860px;position:relative;overflow:hidden;background:var(--bg)}
+.app::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 30% 20%,rgba(91,155,255,.07),transparent),
+    radial-gradient(ellipse 50% 50% at 80% 80%,rgba(139,92,246,.07),transparent)}
+
+/* SCREEN SYSTEM */
+.screen{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;opacity:0;pointer-events:none;
+  transition:opacity .35s ease,transform .35s ease;transform:translateX(40px)}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.screen.exit{opacity:0;transform:translateX(-40px)}
+
+/* PARTICLES */
+#particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.particle{position:absolute;border-radius:50%;opacity:0;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:.6}90%{opacity:.3}100%{transform:translateY(-20px) scale(1);opacity:0}}
+
+/* ===== SPLASH ===== */
+#splash{justify-content:center;align-items:center;background:var(--bg)}
+.splash-logo{text-align:center;z-index:2;animation:splashIn .8s cubic-bezier(.34,1.56,.64,1) .3s both}
+@keyframes splashIn{from{transform:scale(.4) translateY(30px);opacity:0}to{transform:scale(1);opacity:1}}
+.splash-orb{width:130px;height:130px;border-radius:36px;margin:0 auto 28px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:60px;
+  box-shadow:0 0 60px rgba(91,155,255,.5),0 0 120px rgba(139,92,246,.2);
+  animation:orbPulse 2.5s ease-in-out infinite}
+@keyframes orbPulse{0%,100%{box-shadow:0 0 60px rgba(91,155,255,.5)}50%{box-shadow:0 0 90px rgba(91,155,255,.8),0 0 40px rgba(139,92,246,.4)}}
+.splash-title{font-family:'Orbitron',sans-serif;font-size:36px;font-weight:900;letter-spacing:3px;
+  background:linear-gradient(135deg,#fff 0%,var(--accent) 50%,var(--accent2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.splash-tagline{color:var(--muted);font-size:15px;margin-top:10px;font-weight:600;letter-spacing:1px}
+.splash-loader{width:60px;height:4px;background:var(--card2);border-radius:99px;margin:40px auto 0;overflow:hidden}
+.splash-loader-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  border-radius:99px;width:0%;animation:load 2.2s ease-in-out .6s forwards}
+@keyframes load{0%{width:0}60%{width:70%}100%{width:100%}}
+
+/* ===== AUTH ===== */
+#auth{background:var(--bg)}
+.auth-hero{position:relative;min-height:240px;
+  background:linear-gradient(160deg,rgba(91,155,255,.12),rgba(139,92,246,.12));
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  padding:0 24px 28px;border-bottom:1px solid var(--border);overflow:hidden}
+.auth-hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(91,155,255,.15),transparent 70%)}
+.auth-orb{width:72px;height:72px;border-radius:20px;margin-bottom:14px;z-index:1;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:var(--glow)}
+.auth-title{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;letter-spacing:2px;z-index:1;
+  background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-sub{color:var(--muted);font-size:12px;margin-top:5px;z-index:1;text-align:center}
+.auth-body{padding:24px 22px;flex:1;overflow-y:auto}
+.auth-tabs{display:flex;background:var(--card);border-radius:14px;padding:4px;margin-bottom:24px}
+.auth-tab{flex:1;padding:11px;border-radius:10px;border:none;font-family:'Nunito',sans-serif;
+  font-size:14px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .2s;background:none}
+.auth-tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:var(--glow)}
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px;display:block}
+.form-input{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:13px;
+  padding:13px 15px;font-family:'Nunito',sans-serif;font-size:15px;color:var(--text);outline:none;transition:all .2s}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,155,255,.15)}
+.form-input::placeholder{color:var(--muted)}
+.form-error{font-size:11px;color:var(--red);margin-top:5px;display:none}
+.form-error.show{display:block}
+.btn{border:none;border-radius:14px;font-family:'Nunito',sans-serif;font-weight:800;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:var(--glow)}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-primary:active{transform:scale(.97)}
+.btn-ghost{background:var(--card);border:1.5px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-lg{width:100%;padding:15px;font-size:16px;border-radius:15px;margin-top:6px}
+.btn-social{width:100%;padding:12px;font-size:14px;border-radius:13px;
+  background:var(--card2);border:1.5px solid var(--border);color:var(--text);font-weight:700;margin-bottom:9px;cursor:pointer;font-family:'Nunito',sans-serif}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--muted);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ===== ONBOARDING ===== */
+#onboarding{background:var(--bg)}
+.ob-slides{flex:1;position:relative;overflow:hidden}
+.ob-slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:28px 24px;text-align:center;
+  opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.34,1.1,.64,1);pointer-events:none}
+.ob-slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.ob-slide.past{opacity:0;transform:translateX(-60px)}
+.ob-emoji{font-size:80px;margin-bottom:20px;animation:obFloat 3s ease-in-out infinite}
+@keyframes obFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.ob-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;margin-bottom:12px;line-height:1.3}
+.ob-title span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ob-desc{color:var(--muted);font-size:14px;line-height:1.7;max-width:300px}
+.ob-features{margin-top:20px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px}
+.ob-feature{background:var(--card);border:1px solid var(--border);border-radius:13px;
+  padding:11px 14px;display:flex;align-items:center;gap:11px;text-align:left}
+.ob-fi{font-size:20px;flex-shrink:0}
+.ob-ft{font-size:13px;font-weight:800}
+.ob-fs{font-size:11px;color:var(--muted)}
+.ob-footer{padding:20px 22px;border-top:1px solid var(--border)}
+.ob-dots{display:flex;justify-content:center;gap:8px;margin-bottom:18px}
+.ob-dot{width:8px;height:8px;border-radius:99px;background:var(--border);transition:all .3s}
+.ob-dot.active{width:24px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.avatar-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:16px 0}
+.av-opt{width:52px;height:52px;border-radius:14px;background:var(--card);border:2.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .2s}
+.av-opt:hover{border-color:var(--accent);transform:scale(1.1)}
+.av-opt.sel{border-color:var(--accent);background:rgba(91,155,255,.15);box-shadow:var(--glow)}
+.name-input-ob{width:100%;background:var(--card);border:2px solid var(--border);border-radius:13px;
+  padding:13px 15px;font-family:'Nunito',sans-serif;font-size:17px;font-weight:700;
+  color:var(--text);outline:none;transition:all .2s;text-align:center;margin-top:14px}
+.name-input-ob:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,155,255,.15)}
+.name-input-ob::placeholder{color:var(--muted)}
+.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0;width:100%}
+.diff-card{background:var(--card);border:2px solid var(--border);border-radius:15px;
+  padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s}
+.diff-card:hover{border-color:var(--accent)}
+.diff-card.sel{border-color:var(--accent);background:rgba(91,155,255,.12)}
+.diff-icon{font-size:28px;margin-bottom:7px}
+.diff-name{font-size:14px;font-weight:800}
+.diff-desc{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* ===== HOME ===== */
+#home-screen{padding-bottom:80px}
+.home-hdr{padding:18px 20px 14px;background:linear-gradient(180deg,rgba(91,155,255,.1),transparent);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.home-hdr h1{font-family:'Orbitron',sans-serif;font-size:19px;font-weight:900;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.home-hdr-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.h-user{display:flex;align-items:center;gap:9px}
+.h-av{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(91,155,255,.3)}
+.h-name{font-size:13px;font-weight:800}
+.h-lvl{font-size:11px;color:var(--muted)}
+.xp-wrap{margin:14px 18px;background:var(--card);border-radius:15px;padding:14px;border:1px solid var(--border)}
+.xp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.xp-lbl{font-size:13px;font-weight:800;color:var(--gold)}
+.xp-n{font-size:11px;color:var(--muted)}
+.xp-track{background:var(--bg);border-radius:99px;height:8px;overflow:hidden}
+.xp-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  width:68%;transition:width .5s;box-shadow:0 0 10px rgba(91,155,255,.5)}
+.slbl{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--muted);padding:14px 18px 7px;text-transform:uppercase}
+.mc{margin:0 18px 9px;background:var(--card);border:1px solid var(--border);border-radius:17px;
+  padding:16px 16px 16px 14px;display:flex;align-items:center;gap:13px;
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.mc:hover,.mc:active{border-color:var(--accent);box-shadow:var(--glow);transform:translateY(-1px)}
+.mc::after{content:'›';position:absolute;right:16px;color:var(--muted);font-size:22px;font-weight:300}
+.mc-icon{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.mi-b{background:rgba(91,155,255,.15)}.mi-g{background:rgba(34,197,94,.15)}.mi-p{background:rgba(139,92,246,.15)}
+.mc-text h3{font-size:14px;font-weight:800}
+.mc-text p{font-size:12px;color:var(--muted);margin-top:2px}
+.badge-p{position:absolute;right:38px;background:var(--red);color:#fff;border-radius:99px;padding:3px 8px;font-size:11px;font-weight:800}
+.ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 18px 7px}
+.ach-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:12px 11px;display:flex;align-items:center;gap:9px}
+
+/* ===== BOTTOM NAV ===== */
+.bnav{position:absolute;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(7,9,26,.95);border-top:1px solid var(--border);
+  display:flex;justify-content:space-around;align-items:center;
+  padding:11px 0 max(11px,env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
+.nb{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;
+  color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;font-size:10px;font-weight:700;
+  padding:4px 16px;transition:all .2s}
+.nb.active{color:var(--accent)}
+.nb .ni{font-size:21px}
+
+/* ===== GAME ===== */
+#game-screen{padding:18px 18px 90px}
+.g-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.g-qnum{font-family:'Orbitron',sans-serif;font-size:19px;font-weight:900}
+.g-qs{font-size:11px;color:var(--muted);margin-top:2px}
+.score-chip{background:var(--card);border:1px solid var(--border);border-radius:99px;padding:6px 16px;font-size:13px;font-weight:800;color:var(--gold)}
+.t-wrap{position:relative;width:64px;height:64px}
+.t-wrap svg{transform:rotate(-90deg)}
+.t-track{fill:none;stroke:var(--border);stroke-width:5}
+.t-fill{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.t-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;color:var(--accent)}
+.word-card{background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);
+  border-radius:22px;padding:24px 20px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden}
+.word-card::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(91,155,255,.09),transparent 70%)}
+.wc-cat{font-size:10px;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;font-weight:800}
+.wc-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+.wc-hint{font-size:14px;color:var(--text);font-style:italic;line-height:1.6}
+.lrow{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;margin:14px 0 18px}
+.lb2{width:34px;height:40px;border-radius:9px;border:2px solid var(--border);background:var(--card2);
+  display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;
+  font-family:'Orbitron',sans-serif;transition:all .15s}
+.lb2.ok{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.1)}
+.lb2.bad{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.1)}
+.lb2.sp{background:transparent;border-color:transparent;width:10px}
+.hint-row{display:flex;gap:7px;margin-bottom:16px}
+.hchip{flex:1;background:var(--card);border:1px solid var(--border);border-radius:11px;
+  padding:8px 5px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;text-align:center}
+.hchip:hover{border-color:var(--gold);color:var(--gold)}
+.hchip.used{opacity:.35;pointer-events:none}
+.ans-row{display:flex;gap:9px;margin-bottom:14px}
+.spell-input{flex:1;background:var(--card);border:1.5px solid var(--border);border-radius:13px;
+  padding:13px 15px;font-family:'Nunito',sans-serif;font-size:17px;font-weight:700;
+  color:var(--text);outline:none;transition:all .2s;letter-spacing:1px}
+.spell-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,155,255,.15)}
+.spell-input::placeholder{color:var(--muted)}
+.fb-box{border-radius:17px;padding:16px;text-align:center;margin-bottom:14px;animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}
+.fb-c{background:rgba(34,197,94,.1);border:1px solid var(--green)}
+.fb-w{background:rgba(239,68,68,.1);border:1px solid var(--red)}
+.fb-h{font-size:19px;font-weight:900;margin-bottom:4px}
+.fb-p{font-size:12px;color:var(--muted)}
+@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ===== RESULTS ===== */
+#results-screen{padding:28px 20px 90px;align-items:center;text-align:center}
+.r-trophy{font-size:76px;animation:bounce 1s ease infinite alternate}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}
+.r-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;margin:12px 0 5px;
+  background:linear-gradient(135deg,var(--gold),var(--fire));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.r-sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+.r-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;width:100%;margin-bottom:18px}
+.r-stat{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:16px 10px}
+.r-big{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900}
+.r-lbl{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+.c-gold{color:var(--gold)}.c-green{color:var(--green)}.c-ac{color:var(--accent)}.c-fire{color:var(--fire)}
+.word-res{text-align:left;width:100%;margin-bottom:18px}
+.word-res h3{font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:9px;font-weight:800}
+.wr-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.wr-item:last-child{border-bottom:none}
+.wr-word{flex:1;font-size:14px;font-weight:700}
+
+/* ===== LEADERBOARD ===== */
+#lb-screen{padding-bottom:80px}
+.lb-tabs{display:flex;background:var(--card);border-radius:13px;padding:4px;margin:14px 18px}
+.lb-tab{flex:1;padding:9px;border-radius:9px;border:none;background:none;
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .2s}
+.lb-tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.lb-me{margin:0 18px 14px;background:linear-gradient(135deg,rgba(91,155,255,.1),rgba(139,92,246,.1));
+  border:1.5px solid var(--accent);border-radius:15px;padding:14px;display:flex;align-items:center;gap:13px}
+.lb-rank{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;color:var(--gold);min-width:42px}
+.lb-mname{font-size:14px;font-weight:800}
+.lb-msub{font-size:11px;color:var(--muted)}
+.lb-mpts{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;color:var(--accent);margin-left:auto}
+.lb-list{padding:0 18px}
+.lb-row{display:flex;align-items:center;gap:11px;padding:12px 13px;
+  background:var(--card);border:1px solid var(--border);border-radius:13px;margin-bottom:7px;transition:all .2s}
+.lb-row:hover{transform:translateX(2px)}
+.lb-n{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--muted);min-width:26px}
+.lb-av{width:34px;height:34px;border-radius:10px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:17px}
+.lb-info{flex:1}
+.lb-info .n{font-size:13px;font-weight:700}
+.lb-info .d{font-size:11px;color:var(--muted)}
+.lb-pts{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:var(--gold)}
+
+/* ===== PRACTICE ===== */
+#practice-screen{padding-bottom:80px}
+.pr-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 18px}
+.pr-stat{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px 9px;text-align:center}
+.pr-num{font-family:'Orbitron',sans-serif;font-size:19px;font-weight:700;color:var(--accent)}
+.pr-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:1px}
+.frow{display:flex;gap:7px;padding:0 18px;overflow-x:auto;padding-bottom:3px;margin-bottom:12px}
+.fchip{white-space:nowrap;background:var(--card);border:1px solid var(--border);border-radius:99px;
+  padding:7px 13px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .2s;flex-shrink:0}
+.fchip.active{background:rgba(91,155,255,.15);border-color:var(--accent);color:var(--accent)}
+.wlist{padding:0 18px;display:flex;flex-direction:column;gap:7px}
+.wi{background:var(--card);border:1px solid var(--border);border-radius:13px;
+  padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s}
+.wi:hover{border-color:var(--accent)}
+.wi.mastered{border-color:var(--green)}
+.wi-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.d-r{background:var(--red)}.d-y{background:var(--gold)}.d-g{background:var(--green)}
+.wi-word{flex:1;font-size:14px;font-weight:800}
+.wi-sub{font-size:11px;color:var(--muted)}
+.wi-att{font-size:11px;color:var(--muted)}
+
+/* MODAL */
+.overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,.75);z-index:200;
+  align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:22px;
+  padding:24px;width:100%;max-width:360px;animation:popIn .3s ease}
+.modal h3{font-family:'Orbitron',sans-serif;font-size:20px;margin-bottom:4px}
+.modal p{font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+.modal-btns{display:flex;gap:9px}
+.modal-btns .btn{flex:1;padding:12px;font-size:13px}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ========== SCREEN 1: SPLASH ========== -->
+<div class="screen active" id="splash">
+  <div id="particles"></div>
+  <div class="splash-logo">
+    <div class="splash-orb">⚡</div>
+    <div class="splash-title">SPELL QUEST</div>
+    <div class="splash-tagline">Master words. Level up. Win.</div>
+    <div class="splash-loader"><div class="splash-loader-fill"></div></div>
+  </div>
+</div>
+
+<!-- ========== SCREEN 2: AUTH ========== -->
+<div class="screen" id="auth">
+  <div class="auth-hero">
+    <div class="auth-orb">⚡</div>
+    <div class="auth-title">SPELL QUEST</div>
+    <div class="auth-sub">Your spelling adventure begins here</div>
+  </div>
+  <div class="auth-body">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Log In</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="l-email" type="email" placeholder="you@example.com">
+        <div class="form-error" id="l-email-err">Please enter a valid email</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="l-pass" type="password" placeholder="••••••••">
+        <div class="form-error" id="l-pass-err">Password must not be empty</div>
+      </div>
+      <button class="btn btn-primary btn-lg" onclick="doLogin()">Log In →</button>
+      <div class="divider">or continue with</div>
+      <button class="btn-social" onclick="doSocial('Google')">🔵 Continue with Google</button>
+      <button class="btn-social" onclick="doSocial('Apple')">🍎 Continue with Apple</button>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="signup-form" class="hidden">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" id="s-name" type="text" placeholder="Your name">
+        <div class="form-error" id="s-name-err">Name is required</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="s-email" type="email" placeholder="you@example.com">
+        <div class="form-error" id="s-email-err">Please enter a valid email</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="s-pass" type="password" placeholder="At least 6 characters">
+        <div class="form-error" id="s-pass-err">Minimum 6 characters required</div>
+      </div>
+      <button class="btn btn-primary btn-lg" onclick="doSignup()">Create Account →</button>
+      <div class="divider">or continue with</div>
+      <button class="btn-social" onclick="doSocial('Google')">🔵 Continue with Google</button>
+      <button class="btn-social" onclick="doSocial('Apple')">🍎 Continue with Apple</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SCREEN 3: ONBOARDING ========== -->
+<div class="screen" id="onboarding">
+  <div class="ob-slides">
+    <!-- Slide 0: Welcome -->
+    <div class="ob-slide active" id="ob0">
+      <div class="ob-emoji">⚡</div>
+      <div class="ob-title">Welcome to<br><span>Spell Quest!</span></div>
+      <div class="ob-desc">The ultimate spelling game that makes learning fun. Compete, level up, and master thousands of words.</div>
+      <div class="ob-features">
+        <div class="ob-feature"><div class="ob-fi">🏆</div><div><div class="ob-ft">Compete Globally</div><div class="ob-fs">Rise the leaderboard</div></div></div>
+        <div class="ob-feature"><div class="ob-fi">⚡</div><div><div class="ob-ft">Earn XP & Level Up</div><div class="ob-fs">Track your progress</div></div></div>
+        <div class="ob-feature"><div class="ob-fi">📖</div><div><div class="ob-ft">44+ Word Categories</div><div class="ob-fs">Science, Literature & more</div></div></div>
+      </div>
+    </div>
+    <!-- Slide 1: Avatar -->
+    <div class="ob-slide" id="ob1">
+      <div class="ob-emoji">🎭</div>
+      <div class="ob-title">Pick Your <span>Avatar</span></div>
+      <div class="ob-desc">Choose your in-game character and set your display name.</div>
+      <div class="avatar-grid">
+        <div class="av-opt sel" onclick="pickAvatar(this,'🦁')">🦁</div>
+        <div class="av-opt" onclick="pickAvatar(this,'🐯')">🐯</div>
+        <div class="av-opt" onclick="pickAvatar(this,'🦊')">🦊</div>
+        <div class="av-opt" onclick="pickAvatar(this,'🦅')">🦅</div>
+        <div class="av-opt" onclick="pickAvatar(this,'🐉')">🐉</div>
+        <div class="av-opt" onclick="pickAvatar(this,'🌟')">🌟</div>
+        <div class="av-opt" onclick="pickAvatar(this,'⚡')">⚡</div>
+        <div class="av-opt" onclick="pickAvatar(this,'🔥')">🔥</div>
+        <div class="av-opt" onclick="pickAvatar(this,'💎')">💎</div>
+      </div>
+      <input class="name-input-ob" id="ob-uname" placeholder="Enter your username..." maxlength="20">
+    </div>
+    <!-- Slide 2: Difficulty -->
+    <div class="ob-slide" id="ob2">
+      <div class="ob-emoji">🎯</div>
+      <div class="ob-title">Choose <span>Difficulty</span></div>
+      <div class="ob-desc">Start where you're comfortable. You can always change this in settings.</div>
+      <div class="diff-grid">
+        <div class="diff-card" onclick="pickDiff(this,'easy')"><div class="diff-icon">🌱</div><div class="diff-name">Easy</div><div class="diff-desc">Common words · 45s</div></div>
+        <div class="diff-card sel" onclick="pickDiff(this,'normal')"><div class="diff-icon">⚡</div><div class="diff-name">Normal</div><div class="diff-desc">Mixed words · 30s</div></div>
+        <div class="diff-card" onclick="pickDiff(this,'hard')"><div class="diff-icon">🔥</div><div class="diff-name">Hard</div><div class="diff-desc">Tough words · 20s</div></div>
+        <div class="diff-card" onclick="pickDiff(this,'expert')"><div class="diff-icon">💀</div><div class="diff-name">Expert</div><div class="diff-desc">Very hard · 15s</div></div>
+      </div>
+    </div>
+    <!-- Slide 3: Ready -->
+    <div class="ob-slide" id="ob3">
+      <div class="ob-emoji">🚀</div>
+      <div class="ob-title">You're All <span>Set!</span></div>
+      <div class="ob-desc">Your adventure starts now. Spell your way to the top!</div>
+      <div class="ob-features" style="margin-top:24px">
+        <div class="ob-feature"><div class="ob-fi">💡</div><div><div class="ob-ft">Use Hints Wisely</div><div class="ob-fs">3 hints per question</div></div></div>
+        <div class="ob-feature"><div class="ob-fi">⏱</div><div><div class="ob-ft">Speed Bonus</div><div class="ob-fs">Faster = more XP</div></div></div>
+        <div class="ob-feature"><div class="ob-fi">🔥</div><div><div class="ob-ft">Build Streaks</div><div class="ob-fs">Consecutive correct = combo</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="ob-footer">
+    <div class="ob-dots">
+      <div class="ob-dot active"></div>
+      <div class="ob-dot"></div>
+      <div class="ob-dot"></div>
+      <div class="ob-dot"></div>
+    </div>
+    <button class="btn btn-primary btn-lg" id="ob-btn" onclick="obNext()">Get Started →</button>
+  </div>
+</div>
+
+<!-- ========== SCREEN 4: HOME ========== -->
+<div class="screen" id="home-screen">
+  <div class="home-hdr">
+    <div>
+      <h1>⚡ SPELL QUEST</h1>
+      <div class="home-hdr-sub">Level 7 — Spell Warrior</div>
+    </div>
+    <div class="h-user">
+      <div style="text-align:right">
+        <div class="h-name" id="h-name">Hero</div>
+        <div class="h-lvl">🔥 5-day streak</div>
+      </div>
+      <div class="h-av" id="h-av">🦁</div>
+    </div>
+  </div>
+
+  <div class="xp-wrap">
+    <div class="xp-top"><span class="xp-lbl">⚡ Level 7 — Spell Warrior</span><span class="xp-n">340 / 500 XP</span></div>
+    <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
+  </div>
+
+  <div class="slbl">Achievements</div>
+  <div class="ach-grid">
+    <div class="ach-card"><span style="font-size:20px">🏆</span><div><div style="font-size:13px;font-weight:800">Perfect Score</div><div style="font-size:11px;color:var(--muted)">10/10 once</div></div></div>
+    <div class="ach-card"><span style="font-size:20px">🔥</span><div><div style="font-size:13px;font-weight:800">On Fire</div><div style="font-size:11px;color:var(--muted)">5 in a row</div></div></div>
+    <div class="ach-card"><span style="font-size:20px">⚡</span><div><div style="font-size:13px;font-weight:800">Speed Speller</div><div style="font-size:11px;color:var(--muted)">&lt;2s avg</div></div></div>
+    <div class="ach-card"><span style="font-size:20px">🌟</span><div><div style="font-size:13px;font-weight:800">First Win</div><div style="font-size:11px;color:var(--muted)">Completed</div></div></div>
+  </div>
+
+  <div class="slbl">Play</div>
+  <div class="mc" onclick="startGame()">
+    <div class="mc-icon mi-b">🎮</div>
+    <div class="mc-text"><h3>Play Spell Quest</h3><p>Start a new 10-question round</p></div>
+  </div>
+  <div class="mc" onclick="gotoMain('lb-screen')">
+    <div class="mc-icon mi-p">📊</div>
+    <div class="mc-text"><h3>Leaderboard</h3><p>See how you rank globally</p></div>
+  </div>
+  <div class="mc" onclick="gotoMain('practice-screen')">
+    <div class="mc-icon mi-g">📖</div>
+    <div class="mc-text"><h3>Word Practice</h3><p id="pr-count">44 words to master</p></div>
+    <div class="badge-p" id="pr-badge">44</div>
+  </div>
+
+  <div class="bnav">
+    <button class="nb active" id="nb-home" onclick="gotoMain('home-screen');setNb('nb-home')"><span class="ni">🏠</span>Home</button>
+    <button class="nb" id="nb-play" onclick="startGame()"><span class="ni">🎮</span>Play</button>
+    <button class="nb" id="nb-lb" onclick="gotoMain('lb-screen');setNb('nb-lb')"><span class="ni">📊</span>Ranks</button>
+    <button class="nb" id="nb-pr" onclick="gotoMain('practice-screen');setNb('nb-pr')"><span class="ni">📖</span>Practice</button>
+  </div>
+</div>
+
+<!-- ========== GAME SCREEN ========== -->
+<div class="screen" id="game-screen">
+  <div class="g-top">
+    <div><div class="g-qnum" id="g-qnum">1 / 10</div><div class="g-qs">Question</div></div>
+    <div class="t-wrap">
+      <svg viewBox="0 0 64 64" width="64" height="64">
+        <circle class="t-track" cx="32" cy="32" r="27"/>
+        <circle class="t-fill" id="t-fill" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="0"/>
+      </svg>
+      <div class="t-num" id="t-num">30</div>
+    </div>
+    <div class="score-chip">⭐ <span id="g-score">0</span></div>
+  </div>
+
+  <div class="word-card">
+    <div class="wc-cat" id="wc-cat">Category</div>
+    <div class="wc-lbl">Spell this word</div>
+    <div class="wc-hint" id="wc-hint">Loading…</div>
+  </div>
+
+  <div class="lrow" id="lrow"></div>
+
+  <div class="hint-row">
+    <div class="hchip" id="h-first" onclick="useHint('first')">💡 First letter</div>
+    <div class="hchip" id="h-reveal" onclick="useHint('reveal')">🔤 Reveal</div>
+    <div class="hchip" id="h-skip" onclick="useHint('skip')">⏭ Skip</div>
+  </div>
+
+  <div id="fb-area"></div>
+
+  <div class="ans-row">
+    <input class="spell-input" id="spell-inp" placeholder="Type your answer…" autocomplete="off" autocorrect="off" spellcheck="false" oninput="onType()" onkeydown="if(event.key==='Enter')submitAns()">
+    <button class="btn btn-primary" style="padding:13px 18px;font-size:18px" onclick="submitAns()">✓</button>
+  </div>
+</div>
+
+<!-- ========== RESULTS ========== -->
+<div class="screen" id="results-screen">
+  <div class="r-trophy" id="r-trophy">🏆</div>
+  <div class="r-title" id="r-title">Round Complete!</div>
+  <div class="r-sub" id="r-sub">+0 XP earned</div>
+  <div class="r-grid">
+    <div class="r-stat"><div class="r-big c-gold" id="rs-score">0</div><div class="r-lbl">Score</div></div>
+    <div class="r-stat"><div class="r-big c-green" id="rs-correct">0/10</div><div class="r-lbl">Correct</div></div>
+    <div class="r-stat"><div class="r-big c-ac" id="rs-acc">0%</div><div class="r-lbl">Accuracy</div></div>
+    <div class="r-stat"><div class="r-big c-fire" id="rs-streak">0</div><div class="r-lbl">Best Streak</div></div>
+  </div>
+  <div class="word-res"><h3>Word Results</h3><div id="res-wlist"></div></div>
+  <button class="btn btn-primary btn-lg" onclick="startGame()" style="margin-bottom:11px">🎮 Play Again</button>
+  <button class="btn btn-ghost btn-lg" onclick="gotoMain('home-screen')">← Home</button>
+</div>
+
+<!-- ========== LEADERBOARD ========== -->
+<div class="screen" id="lb-screen">
+  <div class="home-hdr"><div><h1>📊 RANKS</h1><div class="home-hdr-sub">Global leaderboard</div></div></div>
+  <div class="lb-tabs">
+    <button class="lb-tab active" onclick="lbTab('global',this)">🌍 Global</button>
+    <button class="lb-tab" onclick="lbTab('weekly',this)">📅 Weekly</button>
+    <button class="lb-tab" onclick="lbTab('friends',this)">👥 Friends</button>
+  </div>
+  <div class="lb-me">
+    <div class="lb-rank" id="lb-mrank">#47</div>
+    <div><div class="lb-mname" id="lb-mname">You 🎮</div><div class="lb-msub">Level 7 · Spell Warrior</div></div>
+    <div class="lb-mpts" id="lb-mpts">3,240</div>
+  </div>
+  <div class="lb-list" id="lb-list"></div>
+  <div style="height:80px"></div>
+  <div class="bnav">
+    <button class="nb" onclick="gotoMain('home-screen');setNb('nb-home')"><span class="ni">🏠</span>Home</button>
+    <button class="nb" onclick="startGame()"><span class="ni">🎮</span>Play</button>
+    <button class="nb active"><span class="ni">📊</span>Ranks</button>
+    <button class="nb" onclick="gotoMain('practice-screen');setNb('nb-pr')"><span class="ni">📖</span>Practice</button>
+  </div>
+</div>
+
+<!-- ========== PRACTICE ========== -->
+<div class="screen" id="practice-screen">
+  <div class="home-hdr"><div><h1>📖 PRACTICE</h1><div class="home-hdr-sub">Master your word list</div></div></div>
+  <div class="pr-stats">
+    <div class="pr-stat"><div class="pr-num" id="prs-total">44</div><div class="pr-lbl">Total</div></div>
+    <div class="pr-stat"><div class="pr-num c-green" id="prs-mast">0</div><div class="pr-lbl">Mastered</div></div>
+    <div class="pr-stat"><div class="pr-num" style="color:var(--red)" id="prs-learn">44</div><div class="pr-lbl">To Learn</div></div>
+  </div>
+  <div class="frow">
+    <div class="fchip active" onclick="filterW('all',this)">All</div>
+    <div class="fchip" onclick="filterW('hard',this)">🔴 Hard</div>
+    <div class="fchip" onclick="filterW('medium',this)">🟡 Learning</div>
+    <div class="fchip" onclick="filterW('mastered',this)">🟢 Mastered</div>
+  </div>
+  <div class="wlist" id="wlist"></div>
+  <div style="height:80px"></div>
+  <div class="bnav">
+    <button class="nb" onclick="gotoMain('home-screen');setNb('nb-home')"><span class="ni">🏠</span>Home</button>
+    <button class="nb" onclick="startGame()"><span class="ni">🎮</span>Play</button>
+    <button class="nb" onclick="gotoMain('lb-screen')"><span class="ni">📊</span>Ranks</button>
+    <button class="nb active"><span class="ni">📖</span>Practice</button>
+  </div>
+</div>
+
+<!-- WORD MODAL -->
+<div class="overlay" id="word-modal">
+  <div class="modal">
+    <h3 id="m-word" style="color:var(--accent);font-size:21px;margin-bottom:3px"></h3>
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:9px" id="m-cat"></div>
+    <p id="m-def"></p>
+    <div style="background:var(--bg);border-radius:11px;padding:11px;margin-bottom:14px;font-size:13px;color:var(--muted)">
+      <strong style="color:var(--text)">Example: </strong><span id="m-ex"></span>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn btn-primary" onclick="practiceWord()">Practice</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+/* ============ WORD DATA ============ */
+const WORDS=[
+  {word:'elephant',hint:'A large grey mammal with a trunk and big ears',category:'Animals',example:'The elephant sprayed water with its trunk.'},
+  {word:'necessary',hint:'Something that is needed or required',category:'Academic',example:'It is necessary to study for the exam.'},
+  {word:'beautiful',hint:'Pleasing to the senses; attractive',category:'Adjectives',example:'The sunset was absolutely beautiful.'},
+  {word:'February',hint:'The second month of the year',category:'Calendar',example:'February has 28 or 29 days.'},
+  {word:'scissors',hint:'A tool with two blades used for cutting',category:'Objects',example:'Use scissors to cut the paper.'},
+  {word:'grammar',hint:'The rules of a language',category:'Academic',example:'Good grammar improves communication.'},
+  {word:'rhythm',hint:'A strong regular repeated pattern of sound',category:'Music',example:'The rhythm of the drums was catchy.'},
+  {word:'occurrence',hint:'An incident or event; something that happens',category:'Academic',example:'The occurrence was highly unusual.'},
+  {word:'Mediterranean',hint:'A sea between Europe, Africa and Asia',category:'Geography',example:'Greece borders the Mediterranean Sea.'},
+  {word:'immediately',hint:'At once; without delay',category:'Adverbs',example:'He immediately called for help.'},
+  {word:'conscientious',hint:'Careful and thorough in doing things well',category:'Adjectives',example:'She was a conscientious student.'},
+  {word:'exaggerate',hint:'To make something seem larger or more extreme',category:'Verbs',example:'He tends to exaggerate his achievements.'},
+  {word:'parallel',hint:'Lines that are always the same distance apart',category:'Math',example:'The two parallel lines never meet.'},
+  {word:'questionnaire',hint:'A set of printed questions for a survey',category:'Academic',example:'Please fill out the questionnaire.'},
+  {word:'meteorology',hint:'The scientific study of weather',category:'Science',example:'Meteorology helps predict storms.'},
+  {word:'fluorescent',hint:'Glowing brightly; emitting visible light',category:'Science',example:'The fluorescent light buzzed softly.'},
+  {word:'broccoli',hint:'A green vegetable with tree-like florets',category:'Food',example:'Broccoli is rich in vitamin C.'},
+  {word:'cemetery',hint:'A place where dead people are buried',category:'Places',example:'The old cemetery was quiet and peaceful.'},
+  {word:'lieutenant',hint:'A military officer of relatively low rank',category:'Military',example:'The lieutenant commanded the platoon.'},
+  {word:'privilege',hint:'A special right or advantage',category:'Academic',example:'Education is a privilege and a right.'},
+  {word:'mischievous',hint:'Causing trouble in a playful way',category:'Adjectives',example:'The mischievous child hid all the spoons.'},
+  {word:'acquaintance',hint:'A person one knows slightly; not a close friend',category:'Social',example:'He was merely an acquaintance, not a friend.'},
+  {word:'bureaucracy',hint:'A system of government with complex rules',category:'Academic',example:'The bureaucracy slowed down the process.'},
+  {word:'camouflage',hint:'Hiding by blending into surroundings',category:'Military',example:'Chameleons use camouflage to hide.'},
+  {word:'exquisite',hint:'Extremely beautiful and delicate',category:'Adjectives',example:'The jewelry was absolutely exquisite.'},
+  {word:'millennium',hint:'A period of one thousand years',category:'Time',example:'The new millennium began in 2001.'},
+  {word:'parliament',hint:'A legislative body of government',category:'Politics',example:'Parliament passed a new law today.'},
+  {word:'pneumonia',hint:'A lung infection causing breathing difficulty',category:'Medical',example:'Pneumonia required a week in hospital.'},
+  {word:'silhouette',hint:'A dark shadow or outline seen against light',category:'Art',example:'A beautiful silhouette against the sunset.'},
+  {word:'surveillance',hint:'Close observation of a person or group',category:'Security',example:'The area was under constant surveillance.'},
+  {word:'tyranny',hint:'Cruel and oppressive government or rule',category:'Politics',example:'The people rose up against tyranny.'},
+  {word:'unanimous',hint:'When everyone agrees on something',category:'Academic',example:'The vote was unanimous in favor.'},
+  {word:'approximately',hint:'Close to but not exactly; roughly',category:'Adverbs',example:'It took approximately two hours.'},
+  {word:'catastrophe',hint:'A sudden disaster causing great damage',category:'Academic',example:'The flood was a true catastrophe.'},
+  {word:'entrepreneur',hint:'A person who sets up businesses',category:'Business',example:'The entrepreneur launched three startups.'},
+  {word:'hallucination',hint:'Perceiving something that is not really there',category:'Medical',example:'High fever can cause hallucination.'},
+  {word:'independent',hint:'Free from outside control',category:'Academic',example:'She was fiercely independent.'},
+  {word:'jeopardize',hint:'To put something into danger or at risk',category:'Verbs',example:"Don't jeopardize your future."},
+  {word:'knowledgeable',hint:'Having a lot of knowledge',category:'Adjectives',example:'The professor was very knowledgeable.'},
+  {word:'miscellaneous',hint:'A variety of different things mixed together',category:'Academic',example:'The drawer was full of miscellaneous items.'},
+  {word:'neighborhood',hint:'A district where people live near each other',category:'Places',example:'Our neighborhood is friendly and safe.'},
+  {word:'onomatopoeia',hint:'Words that sound like what they describe',category:'Language',example:'Buzz and sizzle are onomatopoeia.'},
+  {word:'catastrophe',hint:'A sudden event causing great damage or suffering',category:'Academic',example:'The earthquake was an utter catastrophe.'},
+  {word:'vengeance',hint:'Punishment inflicted in return for a wrong',category:'Literature',example:'He sought vengeance for the injustice.'},
+];
+
+/* ============ STATE ============ */
+const S={
+  user:{name:'Hero',avatar:'🦁',diff:'normal'},
+  xp:340,xpMax:500,level:7,
+  score:0,currentQ:0,questions:[],answers:[],streak:0,bestStreak:0,
+  hints:{first:false,reveal:false,skip:false},
+  timerInt:null,timeLeft:30,
+  wordProg:{},
+  obSlide:0,
+  selAvatar:'🦁',
+  selDiff:'normal',
+  selWord:null,
+  wFilter:'all',
+};
+WORDS.forEach(w=>{S.wordProg[w.word]={attempts:0,correct:0}});
+
+const LB=[
+  'SpellMaster99','WordWizard','LexiconPro','GrammarGuru','VocabKing',
+  'AlphaSpeller','WordNinja','SpellBound','LinguistX','PolyWord'
+].map((n,i)=>({
+  name:n,avatar:['🦁','🐯','🦊','🦅','🐉','🌟','⚡','🔥','💎','🌙'][i],
+  score:Math.floor(Math.random()*8000)+4000,
+  level:Math.floor(Math.random()*10)+5,
+  streak:Math.floor(Math.random()*20)+5
+})).sort((a,b)=>b.score-a.score);
+
+const TIMER_MAP={easy:45,normal:30,hard:20,expert:15};
+
+/* ============ BOOT ============ */
+window.onload=function(){
+  spawnParticles();
+  setTimeout(()=>trans('splash','auth'),2800);
+};
+
+function spawnParticles(){
+  const c=document.getElementById('particles');
+  ['#5b9bff','#8b5cf6','#f5c842','#22c55e','#ff6b35'].forEach((col,ci)=>{
+    for(let i=0;i<6;i++){
+      const p=document.createElement('div'),sz=Math.random()*6+2;
+      p.className='particle';
+      p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;background:${col};animation-duration:${Math.random()*8+4}s;animation-delay:${Math.random()*4}s`;
+      c.appendChild(p);
+    }
+  });
+}
+
+/* ============ NAVIGATION ============ */
+function trans(fromId,toId){
+  const f=document.getElementById(fromId),t=document.getElementById(toId);
+  f.classList.remove('active');f.classList.add('exit');
+  t.classList.add('active');
+  setTimeout(()=>f.classList.remove('exit'),400);
+}
+
+function gotoMain(id){
+  const prev=document.querySelector('.screen.active');
+  if(prev){prev.classList.remove('active');prev.style.transform='';prev.style.opacity='';}
+  const next=document.getElementById(id);
+  next.style.transform='translateX(0)';next.style.opacity='1';
+  next.classList.add('active');
+  if(id==='lb-screen')renderLB();
+  if(id==='practice-screen')renderWords();
+}
+
+function setNb(id){
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#'+id).forEach(b=>b.classList.add('active'));
+}
+
+/* ============ AUTH ============ */
+function switchTab(t){
+  document.getElementById('tab-login').classList.toggle('active',t==='login');
+  document.getElementById('tab-signup').classList.toggle('active',t==='signup');
+  document.getElementById('login-form').classList.toggle('hidden',t!=='login');
+  document.getElementById('signup-form').classList.toggle('hidden',t!=='signup');
+}
+
+function showErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.classList.add('show');}
+function hideErr(id){document.getElementById(id).classList.remove('show');}
+
+function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  hideErr('l-email-err');hideErr('l-pass-err');
+  if(!email||!email.includes('@')){showErr('l-email-err','Please enter a valid email');return;}
+  if(!pass){showErr('l-pass-err','Password must not be empty');return;}
+  // Firebase login handled by module script
+  window._firebaseLogin && window._firebaseLogin(email,pass);
+}
+
+function doSignup(){
+  const name=document.getElementById('s-name').value.trim();
+  const email=document.getElementById('s-email').value.trim();
+  const pass=document.getElementById('s-pass').value;
+  hideErr('s-name-err');hideErr('s-email-err');hideErr('s-pass-err');
+  if(!name){showErr('s-name-err','Name is required');return;}
+  if(!email||!email.includes('@')){showErr('s-email-err','Please enter a valid email');return;}
+  if(pass.length<6){showErr('s-pass-err','Minimum 6 characters required');return;}
+  // Firebase signup handled by module script
+  window._firebaseSignup && window._firebaseSignup(name,email,pass);
+}
+
+function doSocial(p){
+  if(p==='Google'){window._firebaseGoogle && window._firebaseGoogle();}
+  else{showErr('l-email-err','Only Google login is supported');}
+}
+
+/* ============ ONBOARDING ============ */
+function obNext(){
+  const slides=document.querySelectorAll('.ob-slide');
+  const dots=document.querySelectorAll('.ob-dot');
+  if(S.obSlide===3){
+    // finalize
+    const n=document.getElementById('ob-uname').value.trim();
+    if(n)S.user.name=n;
+    S.user.avatar=S.selAvatar;
+    S.user.diff=S.selDiff;
+    document.getElementById('h-name').textContent=S.user.name;
+    document.getElementById('h-av').textContent=S.user.avatar;
+    document.getElementById('lb-mname').textContent=S.user.name+' 🎮';
+    trans('onboarding','home-screen');
+    renderWords();
+    return;
+  }
+  slides[S.obSlide].classList.remove('active');
+  slides[S.obSlide].classList.add('past');
+  dots[S.obSlide].classList.remove('active');
+  S.obSlide++;
+  slides[S.obSlide].classList.remove('past');
+  slides[S.obSlide].classList.add('active');
+  dots[S.obSlide].classList.add('active');
+  document.getElementById('ob-btn').textContent=S.obSlide===3?"Let's Play! 🚀":"Continue →";
+}
+
+function pickAvatar(el,emoji){
+  document.querySelectorAll('.av-opt').forEach(a=>a.classList.remove('sel'));
+  el.classList.add('sel');S.selAvatar=emoji;
+}
+
+function pickDiff(el,d){
+  document.querySelectorAll('.diff-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');S.selDiff=d;
+}
+
+/* ============ GAME ============ */
+function startGame(){
+  gotoMain('game-screen');
+  clearInterval(S.timerInt);
+  S.questions=[...WORDS].sort(()=>Math.random()-.5).slice(0,10);
+  S.answers=[];S.currentQ=0;S.score=0;S.streak=0;S.bestStreak=0;
+  S.hints={first:false,reveal:false,skip:false};
+  loadQ();
+}
+
+function loadQ(){
+  if(S.currentQ>=S.questions.length){endGame();return;}
+  const q=S.questions[S.currentQ];
+  S.hints={first:false,reveal:false,skip:false};
+  const max=TIMER_MAP[S.user.diff]||30;
+  S.timeLeft=max;
+  document.getElementById('g-qnum').textContent=`${S.currentQ+1} / 10`;
+  document.getElementById('g-score').textContent=S.score;
+  document.getElementById('wc-cat').textContent=q.category;
+  document.getElementById('wc-hint').textContent=q.hint;
+  document.getElementById('spell-inp').value='';
+  document.getElementById('spell-inp').disabled=false;
+  document.getElementById('fb-area').innerHTML='';
+  ['first','reveal','skip'].forEach(t=>document.getElementById('h-'+t).classList.remove('used'));
+  renderBoxes('');
+  startTimer();
+  setTimeout(()=>document.getElementById('spell-inp').focus(),80);
+}
+
+function renderBoxes(typed){
+  const q=S.questions[S.currentQ];if(!q)return;
+  const word=q.word.toLowerCase(),t=typed.toLowerCase();
+  let html='',ti=0;
+  for(let i=0;i<word.length;i++){
+    if(word[i]===' '){html+=`<div class="lb2 sp"></div>`;continue;}
+    const ch=ti<t.length?t[ti]:'';
+    const cls=ch?(ch===word[i]?'ok':'bad'):'';
+    html+=`<div class="lb2 ${cls}">${ch.toUpperCase()||''}</div>`;
+    ti++;
+  }
+  document.getElementById('lrow').innerHTML=html;
+}
+
+function onType(){renderBoxes(document.getElementById('spell-inp').value);}
+
+function submitAns(skipped=false){
+  const q=S.questions[S.currentQ];if(!q)return;
+  clearInterval(S.timerInt);
+  const inp=document.getElementById('spell-inp').value.trim().toLowerCase();
+  const isOk=inp===q.word.toLowerCase()&&!skipped;
+  S.wordProg[q.word].attempts++;
+  if(isOk)S.wordProg[q.word].correct++;
+  let pts=0;
+  if(isOk){
+    pts=100+(S.timeLeft*2)+(S.streak*10);
+    S.score+=pts;S.streak++;
+    if(S.streak>S.bestStreak)S.bestStreak=S.streak;
+  }else S.streak=0;
+  S.answers.push({word:q.word,input:inp,correct:isOk,pts});
+  document.getElementById('spell-inp').disabled=true;
+  const fb=document.getElementById('fb-area');
+  fb.innerHTML=isOk
+    ?`<div class="fb-box fb-c"><div class="fb-h">✅ Correct! +${pts}</div><div class="fb-p">${S.streak>1?`🔥 ${S.streak} streak!`:''}</div></div>`
+    :`<div class="fb-box fb-w"><div class="fb-h">❌ It was "<em>${q.word}</em>"</div><div class="fb-p">You typed: ${inp||'(nothing)'}</div></div>`;
+  setTimeout(()=>{S.currentQ++;loadQ();},1600);
+}
+
+function startTimer(){
+  const ci=document.getElementById('t-fill'),nu=document.getElementById('t-num');
+  const C=169.6,max=TIMER_MAP[S.user.diff]||30;
+  S.timeLeft=max;
+  clearInterval(S.timerInt);
+  S.timerInt=setInterval(()=>{
+    S.timeLeft--;
+    nu.textContent=S.timeLeft;
+    ci.style.strokeDashoffset=C*(1-S.timeLeft/max);
+    const danger=S.timeLeft<=Math.floor(max*.33);
+    ci.style.stroke=danger?'var(--red)':'var(--accent)';
+    nu.style.color=danger?'var(--red)':'var(--accent)';
+    if(S.timeLeft<=0){clearInterval(S.timerInt);submitAns(true);}
+  },1000);
+}
+
+function useHint(t){
+  const q=S.questions[S.currentQ];if(!q||S.hints[t])return;
+  S.hints[t]=true;document.getElementById('h-'+t).classList.add('used');
+  const word=q.word.toLowerCase(),inp=document.getElementById('spell-inp');
+  if(t==='first'){if(!inp.value)inp.value=word[0];renderBoxes(inp.value);}
+  else if(t==='reveal'){
+    const cur=inp.value.replace(/\s/g,'').length,lets=word.replace(/\s/g,'');
+    if(cur<lets.length){inp.value=inp.value+lets[cur];renderBoxes(inp.value);}
+  }else submitAns(true);
+}
+
+function endGame(){
+  clearInterval(S.timerInt);
+  const correct=S.answers.filter(a=>a.correct).length;
+  const acc=Math.round((correct/S.questions.length)*100);
+  const xpG=Math.floor(S.score/10);
+  S.xp=Math.min(S.xp+xpG,S.xpMax);
+  document.getElementById('xp-fill').style.width=(S.xp/S.xpMax*100)+'%';
+  const icons=['😢','😅','🙂','😊','🏆'],titles=['Keep Trying!','Not Bad!','Good Job!','Excellent!','Perfect Score!'];
+  const idx=Math.min(Math.floor((correct/10)*4.99),4);
+  document.getElementById('r-trophy').textContent=icons[idx];
+  document.getElementById('r-title').textContent=titles[idx];
+  document.getElementById('r-sub').textContent=`+${xpG} XP earned`;
+  document.getElementById('rs-score').textContent=S.score.toLocaleString();
+  document.getElementById('rs-correct').textContent=`${correct}/10`;
+  document.getElementById('rs-acc').textContent=`${acc}%`;
+  document.getElementById('rs-streak').textContent=S.bestStreak;
+  document.getElementById('res-wlist').innerHTML=S.answers.map(a=>
+    `<div class="wr-item"><span class="wr-word">${a.word}</span><span>${a.correct?'✅':'❌ '+a.input}</span></div>`
+  ).join('');
+  gotoMain('results-screen');
+}
+
+/* ============ LEADERBOARD ============ */
+function lbTab(t,btn){
+  document.querySelectorAll('.lb-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(t==='weekly'){document.getElementById('lb-mrank').textContent='#12';document.getElementById('lb-mpts').textContent='840';}
+  else if(t==='friends'){document.getElementById('lb-mrank').textContent='#3';document.getElementById('lb-mpts').textContent='3,240';}
+  else{document.getElementById('lb-mrank').textContent='#47';document.getElementById('lb-mpts').textContent='3,240';}
+  renderLB();
+}
+function renderLB(){
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById('lb-list').innerHTML=LB.slice(0,10).map((p,i)=>
+    `<div class="lb-row"><div class="lb-n">${medals[i]||'#'+(i+1)}</div>
+    <div class="lb-av">${p.avatar}</div>
+    <div class="lb-info"><div class="n">${p.name}</div><div class="d">Lv.${p.level} · 🔥${p.streak}</div></div>
+    <div class="lb-pts">${p.score.toLocaleString()}</div></div>`
+  ).join('');
+}
+
+/* ============ PRACTICE ============ */
+function getStatus(w){
+  const p=S.wordProg[w.word];
+  if(!p||p.attempts===0)return 'hard';
+  const r=p.correct/p.attempts;
+  if(r>=.8&&p.attempts>=2)return 'mastered';
+  if(r>=.5)return 'medium';
+  return 'hard';
+}
+function renderWords(){
+  const mastered=WORDS.filter(w=>getStatus(w)==='mastered').length;
+  document.getElementById('prs-total').textContent=WORDS.length;
+  document.getElementById('prs-mast').textContent=mastered;
+  document.getElementById('prs-learn').textContent=WORDS.length-mastered;
+  document.getElementById('pr-count').textContent=`${WORDS.length-mastered} words to master`;
+  document.getElementById('pr-badge').textContent=WORDS.length-mastered;
+  const filtered=WORDS.filter(w=>S.wFilter==='all'||getStatus(w)===S.wFilter);
+  document.getElementById('wlist').innerHTML=filtered.map(w=>{
+    const st=getStatus(w),p=S.wordProg[w.word];
+    const dot=st==='mastered'?'d-g':st==='medium'?'d-y':'d-r';
+    return`<div class="wi ${st==='mastered'?'mastered':''}" onclick="openModal('${w.word}')">
+      <div class="wi-dot ${dot}"></div>
+      <div style="flex:1"><div class="wi-word">${w.word}</div><div class="wi-sub">${w.category} · ${w.hint.slice(0,36)}…</div></div>
+      <div class="wi-att">${p&&p.attempts>0?`${p.correct}/${p.attempts}`:'New'}</div>
+    </div>`;
+  }).join('')||'<p style="color:var(--muted);text-align:center;padding:20px">No words here</p>';
+}
+function filterW(f,el){
+  S.wFilter=f;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderWords();
+}
+function openModal(word){
+  const w=WORDS.find(x=>x.word===word);if(!w)return;
+  S.selWord=w;
+  document.getElementById('m-word').textContent=w.word;
+  document.getElementById('m-cat').textContent=w.category;
+  document.getElementById('m-def').textContent=w.hint;
+  document.getElementById('m-ex').textContent=w.example;
+  document.getElementById('word-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('word-modal').classList.remove('open');}
+function practiceWord(){
+  closeModal();if(!S.selWord)return;
+  gotoMain('game-screen');
+  clearInterval(S.timerInt);
+  S.questions=Array(3).fill(S.selWord);
+  S.answers=[];S.currentQ=0;S.score=0;S.streak=0;S.bestStreak=0;
+  S.hints={first:false,reveal:false,skip:false};
+  loadQ();
+}
+<!-- TOAST -->
+<div id="sq-toast" style="position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-120px);z-index:9999;padding:14px 24px;border-radius:14px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;min-width:250px;max-width:320px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:center;gap:8px;">Message</div>
+<style>
+#sq-toast.show{transform:translateX(-50%) translateY(0)!important;}
+#sq-toast.success{background:#22c55e;color:#fff;}
+#sq-toast.error{background:#ef4444;color:#fff;}
+#sq-toast.info{background:#0ea5e9;color:#fff;}
+</style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+         signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
+         updateProfile } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey:            "AIzaSyBWo6kILr1csElklswjyOQBiXWAZvUUHJw",
+  authDomain:        "spell-quests.firebaseapp.com",
+  projectId:         "spell-quests",
+  storageBucket:     "spell-quests.firebasestorage.app",
+  messagingSenderId: "135586511928",
+  appId:             "1:135586511928:web:0c78a70ad00521ef9d7acd",
+  measurementId:     "G-VK1RY5EVVP"
+});
+const auth = getAuth(app);
+const gp   = new GoogleAuthProvider();
+
+// Toast
+let _tt;
+function toast(msg,type){
+  const t=document.getElementById('sq-toast');
+  t.textContent=msg; t.className=type+' show';
+  clearTimeout(_tt);
+  _tt=setTimeout(()=>{t.className=type;},3500);
+}
+
+// Error map
+function ferr(code){
+  return({
+    'auth/user-not-found':       '❌ No account found! Please sign up.',
+    'auth/wrong-password':       '❌ Wrong password! Try again.',
+    'auth/email-already-in-use': '❌ Email already used! Please login.',
+    'auth/invalid-email':        '❌ Invalid email address!',
+    'auth/weak-password':        '❌ Password too weak! Use 6+ chars.',
+    'auth/invalid-credential':   '❌ Wrong email or password!',
+    'auth/too-many-requests':    '❌ Too many attempts! Wait a moment.',
+    'auth/network-request-failed':'❌ No internet! Check connection.',
+    'auth/popup-closed-by-user': '❌ Google popup closed. Try again.',
+    'auth/cancelled-popup-request':'❌ Popup cancelled. Try again.',
+  })[code]||'❌ Error: '+code;
+}
+
+// Navigate after login
+function afterLogin(user, isNew){
+  const name = user.displayName || user.email.split('@')[0];
+  S.user.name = name;
+  S.user.avatar = '🦁';
+  document.getElementById('h-name').textContent = name;
+  document.getElementById('h-av').textContent = S.user.avatar;
+  document.getElementById('lb-mname').textContent = name + ' 🎮';
+  const seenKey = 'sq_seen_' + user.uid;
+  const seen = localStorage.getItem(seenKey);
+  localStorage.setItem(seenKey, '1');
+  if(!seen || isNew){
+    trans('auth','onboarding');
+  } else {
+    trans('auth','home-screen');
+    renderWords();
+  }
+}
+
+// Auth state — auto login returning users
+let _handled = false;
+onAuthStateChanged(auth, user => {
+  if(!user || _handled) return;
+  _handled = true;
+  const name = user.displayName || user.email.split('@')[0];
+  S.user.name = name;
+  S.user.avatar = '🦁';
+  document.getElementById('h-name').textContent = name;
+  document.getElementById('h-av').textContent = S.user.avatar;
+  document.getElementById('lb-mname').textContent = name + ' 🎮';
+  const seenKey = 'sq_seen_' + user.uid;
+  const seen = localStorage.getItem(seenKey);
+  localStorage.setItem(seenKey, '1');
+  // Skip splash and auth — go directly to home
+  setTimeout(()=>{
+    const splash = document.getElementById('splash');
+    const authScreen = document.getElementById('auth');
+    splash.classList.remove('active');
+    authScreen.classList.remove('active');
+    if(!seen){
+      document.getElementById('onboarding').classList.add('active');
+    } else {
+      document.getElementById('home-screen').style.transform='translateX(0)';
+      document.getElementById('home-screen').style.opacity='1';
+      document.getElementById('home-screen').classList.add('active');
+      renderWords();
+    }
+  }, 2500);
+});
+
+// LOGIN
+window._firebaseLogin = async function(email, pass) {
+  const btn = document.querySelector('#login-form .btn-primary');
+  if(btn){ btn.textContent = 'Logging in...'; btn.disabled = true; }
+  try {
+    const c = await signInWithEmailAndPassword(auth, email, pass);
+    const name = c.user.displayName || email.split('@')[0];
+    toast('✅ Welcome back ' + name + '! 👋', 'success');
+    setTimeout(()=>{ afterLogin(c.user, false); if(btn){btn.textContent='Log In →';btn.disabled=false;} }, 1500);
+  } catch(e) {
+    if(btn){ btn.textContent='Log In →'; btn.disabled=false; }
+    toast(ferr(e.code), 'error');
+  }
+};
+
+// SIGNUP
+window._firebaseSignup = async function(name, email, pass) {
+  const btn = document.querySelector('#signup-form .btn-primary');
+  if(btn){ btn.textContent = 'Creating...'; btn.disabled = true; }
+  try {
+    const c = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(c.user, {displayName: name});
+    toast('🎉 Account created! Welcome ' + name + '!', 'success');
+    setTimeout(()=>{ afterLogin(c.user, true); if(btn){btn.textContent='Create Account →';btn.disabled=false;} }, 1500);
+  } catch(e) {
+    if(btn){ btn.textContent='Create Account →'; btn.disabled=false; }
+    toast(ferr(e.code), 'error');
+  }
+};
+
+// GOOGLE
+window._firebaseGoogle = async function() {
+  try {
+    const r = await signInWithPopup(auth, gp);
+    const name = r.user.displayName || 'Player';
+    toast('🎉 Welcome ' + name + '!', 'success');
+    setTimeout(()=>{ afterLogin(r.user, false); }, 1500);
+  } catch(e) { toast(ferr(e.code), 'error'); }
+};
+
+// LOGOUT — add to profile button if exists
+window._firebaseLogout = async function() {
+  await signOut(auth);
+  _handled = false;
+  toast('👋 Logged out! See you soon.', 'info');
+  setTimeout(()=>{
+    document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.transform='';s.style.opacity='';});
+    document.getElementById('auth').classList.add('active');
+  }, 800);
+};
+</script>
+</body>
