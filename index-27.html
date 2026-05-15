@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spell Quest 🌿</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{--sky:#0ea5e9;--deep:#0c1a3a;--card:#162040;--accent:#f59e0b;--green:#22c55e;--red:#ef4444;--text:#e2e8f0;--muted:#94a3b8;--purple:#8b5cf6;}
+  body{font-family:'Nunito',sans-serif;background:var(--deep);color:var(--text);min-height:100vh;overflow:hidden;}
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
+  .star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d) ease-in-out infinite alternate;opacity:0;}
+  @keyframes twinkle{from{opacity:.1;transform:scale(.8);}to{opacity:.9;transform:scale(1.2);}}
+
+  /* TOAST */
+  #toast{position:fixed;top:30px;left:50%;transform:translateX(-50%) translateY(-140px);z-index:99999;padding:16px 28px;border-radius:16px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;min-width:260px;max-width:340px;box-shadow:0 12px 40px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.4,0,.2,1);text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;}
+  #toast.show{transform:translateX(-50%) translateY(0);}
+  #toast.success{background:var(--green);color:#fff;}
+  #toast.error{background:var(--red);color:#fff;}
+  #toast.info{background:var(--sky);color:#fff;}
+
+  /* SCREENS */
+  .screen{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s ease,transform .5s ease;overflow-y:auto;}
+  .screen.hidden{opacity:0;pointer-events:none;transform:scale(0.97);}
+
+  /* ── STAGE 1: SPLASH ── */
+  #splashScreen{background:linear-gradient(160deg,#0c1a3a 0%,#0f2454 50%,#0c1a3a 100%);}
+  .sp-glow{position:absolute;width:320px;height:320px;background:radial-gradient(circle,rgba(14,165,233,.18) 0%,transparent 70%);border-radius:50%;animation:spPulse 3s ease-in-out infinite;}
+  @keyframes spPulse{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.2);opacity:1;}}
+  .sp-emoji{font-size:90px;margin-bottom:24px;animation:flt 3s ease-in-out infinite;position:relative;z-index:1;filter:drop-shadow(0 0 30px rgba(245,158,11,.5));}
+  .sp-title{font-family:'Fredoka One',cursive;font-size:3.2rem;color:var(--accent);letter-spacing:2px;position:relative;z-index:1;text-shadow:0 0 40px rgba(245,158,11,.5);animation:fu .8s ease .3s both;}
+  .sp-sub{font-size:1rem;color:var(--muted);margin-top:8px;font-weight:600;letter-spacing:1px;position:relative;z-index:1;animation:fu .8s ease .5s both;}
+  .sp-bar-wrap{margin-top:60px;position:relative;z-index:1;animation:fu .8s ease .7s both;}
+  .sp-bar{width:200px;height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;}
+  .sp-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--accent));border-radius:99px;animation:spLoad 2.5s ease forwards;}
+  @keyframes spLoad{from{width:0%}to{width:100%}}
+  .sp-txt{text-align:center;margin-top:12px;color:var(--muted);font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+
+  /* ── STAGE 2: AUTH LANDING ── */
+  #authScreen{background:linear-gradient(160deg,#0c1a3a 0%,#0f2454 50%,#0c1a3a 100%);}
+  .auth-land{width:100%;max-width:420px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .al-glow{position:absolute;width:280px;height:280px;background:radial-gradient(circle,rgba(139,92,246,.15) 0%,transparent 70%);border-radius:50%;top:10%;animation:spPulse 3s ease-in-out infinite;}
+  .al-emoji{font-size:80px;margin-bottom:16px;animation:flt 3s ease-in-out infinite;position:relative;z-index:1;filter:drop-shadow(0 0 20px rgba(245,158,11,.4));}
+  .al-title{font-family:'Fredoka One',cursive;font-size:2.6rem;color:var(--accent);letter-spacing:1px;position:relative;z-index:1;text-shadow:0 0 30px rgba(245,158,11,.4);animation:fu .7s ease both;}
+  .al-sub{color:var(--muted);font-size:.95rem;font-weight:600;margin-top:8px;margin-bottom:40px;position:relative;z-index:1;animation:fu .7s ease .15s both;}
+  .al-btns{width:100%;display:flex;flex-direction:column;gap:12px;position:relative;z-index:1;animation:fu .7s ease .3s both;}
+  .al-primary{width:100%;background:linear-gradient(135deg,var(--accent),#f97316);border:none;border-radius:16px;color:white;font-family:'Fredoka One',cursive;font-size:1.2rem;padding:16px;cursor:pointer;box-shadow:0 8px 24px rgba(245,158,11,.4);transition:all .2s;}
+  .al-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(245,158,11,.5);}
+  .al-secondary{width:100%;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);border-radius:16px;color:var(--text);font-family:'Fredoka One',cursive;font-size:1.2rem;padding:16px;cursor:pointer;transition:all .2s;}
+  .al-secondary:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);}
+  .al-google{width:100%;background:white;border:none;border-radius:16px;color:#1f2937;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;padding:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:all .2s;}
+  .al-divider{color:var(--muted);font-size:.85rem;font-weight:600;position:relative;width:100%;text-align:center;}
+  .al-divider::before,.al-divider::after{content:'';position:absolute;top:50%;width:43%;height:1px;background:rgba(255,255,255,.1);}
+  .al-divider::before{left:0;}.al-divider::after{right:0;}
+
+  /* ── STAGE 2b: SIGNUP / LOGIN FORMS ── */
+  .auth-page{width:100%;padding:24px;display:flex;flex-direction:column;align-items:center;}
+  .auth-inner{width:100%;max-width:420px;}
+  .back-btn{background:none;border:none;color:var(--muted);font-weight:700;font-size:.9rem;cursor:pointer;margin-bottom:20px;display:flex;align-items:center;gap:6px;}
+  .auth-head{margin-bottom:20px;}
+  .auth-head .ico{font-size:44px;display:block;margin-bottom:10px;}
+  .auth-head h2{font-family:'Fredoka One',cursive;font-size:1.9rem;color:white;margin-bottom:4px;}
+  .auth-head p{color:var(--muted);font-size:.9rem;font-weight:600;}
+  .auth-box{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+  .fg{margin-bottom:14px;}
+  .fl{display:block;font-size:.75rem;font-weight:800;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:7px;}
+  .fi{width:100%;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1);border-radius:12px;color:var(--text);font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;padding:12px 15px;outline:none;transition:all .2s;}
+  .fi:focus{border-color:var(--sky);background:rgba(14,165,233,.08);}
+  .fi::placeholder{color:var(--muted);}
+  .ph-row{display:flex;gap:8px;}
+  .ph-code{width:76px;flex-shrink:0;text-align:center;}
+  .main-btn{width:100%;margin-top:8px;background:linear-gradient(135deg,var(--sky),var(--purple));border:none;border-radius:14px;color:white;font-family:'Fredoka One',cursive;font-size:1.1rem;padding:14px;cursor:pointer;box-shadow:0 6px 20px rgba(14,165,233,.35);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;}
+  .spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spinA .7s linear infinite;display:none;flex-shrink:0;}
+  .main-btn.loading .spin{display:block;}
+  @keyframes spinA{to{transform:rotate(360deg)}}
+  .divider{text-align:center;color:var(--muted);font-size:.85rem;font-weight:600;margin:14px 0;position:relative;}
+  .divider::before,.divider::after{content:'';position:absolute;top:50%;width:41%;height:1px;background:rgba(255,255,255,.1);}
+  .divider::before{left:0;}.divider::after{right:0;}
+  .g-btn{width:100%;background:white;border:none;border-radius:14px;color:#1f2937;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 12px rgba(0,0,0,.2);}
+  .auth-foot{text-align:center;margin-top:16px;color:var(--muted);font-size:.9rem;font-weight:600;}
+  .auth-foot span{color:var(--sky);cursor:pointer;font-weight:800;}
+
+  /* ── STAGE 3: ONBOARDING ── */
+  #obScreen{justify-content:flex-end;}
+  .ob-bg{position:absolute;inset:0;background:var(--deep);z-index:-1;}
+  .ob-wrap{flex:1;width:100%;overflow:hidden;display:flex;align-items:center;}
+  .ob-track{display:flex;width:100%;transition:transform .5s cubic-bezier(.4,0,.2,1);}
+  .ob-slide{min-width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 32px 0;}
+  .ob-emoji{font-size:90px;margin-bottom:20px;animation:flt 3s ease-in-out infinite;filter:drop-shadow(0 8px 32px rgba(0,0,0,.5));}
+  .ob-slide:nth-child(2) .ob-emoji{animation-delay:.5s;}
+  .ob-slide:nth-child(3) .ob-emoji{animation-delay:1s;}
+  .ob-tag{font-size:.7rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--sky);background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);padding:5px 16px;border-radius:99px;margin-bottom:16px;}
+  .ob-slide h2{font-family:'Fredoka One',cursive;font-size:2rem;color:white;line-height:1.2;margin-bottom:12px;}
+  .ob-slide h2 span{color:var(--accent);}
+  .ob-slide p{color:var(--muted);font-size:.95rem;line-height:1.7;font-weight:600;max-width:300px;}
+  .ob-bottom{width:100%;background:var(--card);border-radius:28px 28px 0 0;padding:24px 24px 40px;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0;}
+  .ob-dots{display:flex;gap:8px;justify-content:center;margin-bottom:20px;}
+  .ob-dot{width:8px;height:8px;border-radius:99px;background:rgba(255,255,255,.2);transition:all .3s;}
+  .ob-dot.active{width:28px;background:var(--accent);}
+  .ob-next{width:100%;background:linear-gradient(135deg,var(--accent),#f97316);border:none;border-radius:16px;color:white;font-family:'Fredoka One',cursive;font-size:1.15rem;padding:16px;cursor:pointer;box-shadow:0 6px 20px rgba(245,158,11,.4);transition:all .2s;}
+
+  /* ── STAGE 4: GAME ── */
+  #gameScreen{overflow-y:auto;justify-content:flex-start;padding:20px;}
+  .game-wrap{width:100%;max-width:520px;z-index:1;}
+  .game-hdr{text-align:center;margin-bottom:14px;}
+  .game-hdr h1{font-family:'Fredoka One',cursive;font-size:clamp(2rem,7vw,2.8rem);color:var(--accent);letter-spacing:1px;text-shadow:0 0 30px rgba(245,158,11,.4);}
+  .game-hdr p{color:var(--muted);font-size:.9rem;margin-top:4px;font-weight:600;}
+  .user-bar{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:10px 16px;margin-bottom:16px;}
+  .ub-left{display:flex;align-items:center;gap:10px;}
+  .ub-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1rem;font-family:'Fredoka One',cursive;}
+  .ub-name{font-weight:700;font-size:.88rem;}
+  .ub-right{display:flex;align-items:center;gap:8px;}
+  .prof-btn{background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.2);border-radius:8px;color:var(--sky);font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:700;padding:5px 10px;cursor:pointer;transition:all .2s;}
+  .prof-btn:hover{background:rgba(14,165,233,.22);border-color:var(--sky);}
+  .lo-btn{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:var(--red);font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:700;padding:5px 10px;cursor:pointer;}
+  .scorebar{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:10px 18px;margin-bottom:18px;}
+  .s-item{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .s-label{color:var(--muted);font-size:.7rem;letter-spacing:.5px;text-transform:uppercase;font-weight:700;}
+  .s-val{color:var(--accent);font-size:1.1rem;font-family:'Fredoka One',cursive;}
+  .s-val.c{color:var(--green);}.s-val.w{color:var(--red);}
+  .prog-track{background:rgba(255,255,255,.08);border-radius:99px;height:6px;margin-bottom:20px;overflow:hidden;}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--accent));border-radius:99px;transition:width .5s ease;}
+  .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:26px 22px;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:slideUp .4s ease;}
+  .q-num{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;}
+  .q-txt{font-family:'Fredoka One',cursive;font-size:clamp(1.2rem,4vw,1.5rem);color:white;margin-bottom:18px;}
+  .word-hint{display:inline-block;color:var(--sky);font-size:clamp(1.4rem,6vw,1.9rem);letter-spacing:4px;font-family:'Fredoka One',cursive;background:rgba(14,165,233,.1);padding:6px 16px;border-radius:10px;border:1px solid rgba(14,165,233,.25);margin-bottom:20px;}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .opt{background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1);border-radius:14px;color:var(--text);font-family:'Nunito',sans-serif;font-size:clamp(.95rem,3vw,1.05rem);font-weight:700;padding:13px 8px;cursor:pointer;transition:all .18s;text-align:center;}
+  .opt:hover:not(:disabled){background:rgba(14,165,233,.15);border-color:var(--sky);transform:translateY(-2px);}
+  .opt.correct{background:rgba(34,197,94,.2);border-color:var(--green);color:var(--green);animation:pglow .4s ease;}
+  .opt.wrong{background:rgba(239,68,68,.18);border-color:var(--red);color:var(--red);animation:shk .35s ease;}
+  @keyframes pglow{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{box-shadow:0 0 0 10px rgba(34,197,94,0);}}
+  @keyframes shk{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+  .fb{margin-top:16px;padding:11px 14px;border-radius:12px;font-weight:700;font-size:.9rem;display:none;align-items:center;gap:8px;}
+  .fb.show{display:flex;animation:fadeIn .3s ease;}
+  .fb.cfb{background:rgba(34,197,94,.15);color:var(--green);}
+  .fb.wfb{background:rgba(239,68,68,.12);color:var(--red);}
+  .nxt-btn{margin-top:18px;width:100%;background:linear-gradient(135deg,var(--sky),#6366f1);border:none;border-radius:14px;color:white;font-family:'Fredoka One',cursive;font-size:1.1rem;padding:13px;cursor:pointer;transition:all .2s;display:none;box-shadow:0 6px 20px rgba(14,165,233,.3);}
+  .nxt-btn.show{display:block;animation:fadeIn .3s ease;}
+  .result{display:none;text-align:center;}
+  .result.show{display:block;animation:slideUp .5s ease;}
+  .result .trophy{font-size:4rem;margin-bottom:12px;}
+  .result h2{font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent);margin-bottom:8px;}
+  .result .fs{font-size:3rem;font-family:'Fredoka One',cursive;color:white;margin:12px 0;}
+  .result .fs span{color:var(--sky);}
+  .result p{color:var(--muted);font-size:.95rem;margin-bottom:24px;}
+  .restart-btn{background:linear-gradient(135deg,var(--accent),#f97316);border:none;border-radius:14px;color:white;font-family:'Fredoka One',cursive;font-size:1.2rem;padding:14px 36px;cursor:pointer;box-shadow:0 6px 20px rgba(245,158,11,.35);}
+  .qs-wrap{transition:opacity .3s ease;}
+
+  @keyframes flt{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-16px) rotate(3deg);}}
+  @keyframes fu{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div id="toast"></div>
+
+<!-- ══ STAGE 1: SPLASH ══ -->
+<div class="screen" id="splashScreen">
+  <div class="sp-glow"></div>
+  <div class="sp-emoji">🌿</div>
+  <h1 class="sp-title">Spell Quest</h1>
+  <p class="sp-sub">Master Every Word ✨</p>
+  <div class="sp-bar-wrap">
+    <div class="sp-bar"><div class="sp-fill"></div></div>
+    <p class="sp-txt">Loading...</p>
+  </div>
+</div>
+
+<!-- ══ STAGE 2: AUTH LANDING (logo + buttons) ══ -->
+<div class="screen hidden" id="authScreen">
+  <div class="al-glow"></div>
+  <div class="auth-land">
+    <div class="al-emoji">🌿</div>
+    <h1 class="al-title">Spell Quest</h1>
+    <p class="al-sub">Master Every Word ✨<br>Join thousands of learners!</p>
+    <div class="al-btns">
+      <button class="al-primary" id="alSignupBtn">🚀 Sign Up Free</button>
+      <button class="al-secondary" id="alLoginBtn">🔐 Login</button>
+      <div class="al-divider">or continue with</div>
+      <button class="al-google" id="alGoogleBtn">🔵 Continue with Google</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STAGE 2b: SIGNUP FORM ══ -->
+<div class="screen hidden" id="signupScreen">
+  <div class="auth-page">
+    <div class="auth-inner">
+      <button class="back-btn" id="suBackBtn">← Back</button>
+      <div class="auth-head">
+        <span class="ico">✨</span>
+        <h2>Create Account</h2>
+        <p>Join Spell Quest — it's free!</p>
+      </div>
+      <div class="auth-box">
+        <div class="fg"><label class="fl">Full Name</label><input class="fi" type="text" id="su_name" placeholder="Your full name"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fi" type="email" id="su_email" placeholder="your@email.com"></div>
+        <div class="fg"><label class="fl">Mobile</label><div class="ph-row"><input class="fi ph-code" type="text" id="su_code" value="+91"><input class="fi" type="tel" id="su_phone" placeholder="9876543210"></div></div>
+        <div class="fg"><label class="fl">Password</label><input class="fi" type="password" id="su_pass" placeholder="Min 6 characters"></div>
+        <button class="main-btn" id="suBtn"><span class="spin"></span><span id="suTxt">Create Account →</span></button>
+        <div class="divider">or</div>
+        <button class="g-btn" id="suGoogle">🔵 Continue with Google</button>
+      </div>
+      <div class="auth-foot">Have an account? <span id="suToLogin">Login</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STAGE 2b: LOGIN FORM ══ -->
+<div class="screen hidden" id="loginScreen">
+  <div class="auth-page">
+    <div class="auth-inner">
+      <button class="back-btn" id="liBackBtn">← Back</button>
+      <div class="auth-head">
+        <span class="ico">🔐</span>
+        <h2>Welcome Back!</h2>
+        <p>Login to continue your journey</p>
+      </div>
+      <div class="auth-box">
+        <div class="fg"><label class="fl">Email</label><input class="fi" type="email" id="li_email" placeholder="your@email.com"></div>
+        <div class="fg"><label class="fl">Password</label><input class="fi" type="password" id="li_pass" placeholder="••••••••"></div>
+        <button class="main-btn" id="liBtn"><span class="spin"></span><span id="liTxt">Login →</span></button>
+        <div class="divider">or</div>
+        <button class="g-btn" id="liGoogle">🔵 Continue with Google</button>
+      </div>
+      <div class="auth-foot">New here? <span id="liToSignup">Sign Up Free</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STAGE 3: ONBOARDING (new users only) ══ -->
+<div class="screen hidden" id="obScreen">
+  <div class="ob-bg"></div>
+  <div class="ob-wrap">
+    <div class="ob-track" id="obTrack">
+      <div class="ob-slide">
+        <div class="ob-emoji">📖</div>
+        <div class="ob-tag">Welcome</div>
+        <h2>You're In! <span>Let's Begin!</span></h2>
+        <p>Your spelling adventure starts now. 44+ words to master!</p>
+      </div>
+      <div class="ob-slide">
+        <div class="ob-emoji">🎯</div>
+        <div class="ob-tag">How to Play</div>
+        <h2>Simple & <span>Super Fun!</span></h2>
+        <p>See the first letter hint. Pick the correct spelling from 4 options!</p>
+      </div>
+      <div class="ob-slide">
+        <div class="ob-emoji">🏆</div>
+        <div class="ob-tag">Let's Go!</div>
+        <h2>Time to <span>Spell It Right!</span></h2>
+        <p>10 questions per round — become the Spelling Champion today! 🌟</p>
+      </div>
+    </div>
+  </div>
+  <div class="ob-bottom">
+    <div class="ob-dots" id="obDots">
+      <div class="ob-dot active"></div>
+      <div class="ob-dot"></div>
+      <div class="ob-dot"></div>
+    </div>
+    <button class="ob-next" id="obNextBtn">Next →</button>
+  </div>
+</div>
+
+<!-- ══ STAGE 4: GAME ══ -->
+<div class="screen hidden" id="gameScreen">
+  <div class="game-wrap">
+    <div class="game-hdr"><h1>🌿 Spell Quest</h1><p>Choose the correct spelling!</p></div>
+    <div class="user-bar">
+      <div class="ub-left">
+        <div class="ub-av" id="ubAv">👤</div>
+        <span class="ub-name" id="ubName">Player</span>
+      </div>
+      <div class="ub-right">
+        <button class="prof-btn" onclick="window.location.href='profile.html'">👤 Profile</button>
+        <button class="lo-btn" id="loBtn">Logout</button>
+      </div>
+    </div>
+    <div class="qs-wrap" id="quizSection">
+      <div class="scorebar">
+        <div class="s-item"><span class="s-label">Question</span><span class="s-val" id="qNum">1/10</span></div>
+        <div class="s-item"><span class="s-label">✅ Correct</span><span class="s-val c" id="sC">0</span></div>
+        <div class="s-item"><span class="s-label">❌ Wrong</span><span class="s-val w" id="sW">0</span></div>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      <div class="card" id="card">
+        <div class="q-num" id="qNum2">Question 1 of 10</div>
+        <div class="q-txt">Sahi spelling chuniye:</div>
+        <div class="word-hint" id="wordHint">_ _ _ _ _</div>
+        <div class="opts" id="optsGrid"></div>
+        <div class="fb" id="feedback"><span id="fbIco"></span><span id="fbTxt"></span></div>
+        <button class="nxt-btn" id="nxtBtn">Agla Sawaal →</button>
+      </div>
+    </div>
+    <div class="result" id="resultSection">
+      <div class="trophy" id="trophy">🏆</div>
+      <h2 id="resTitle">Shabash!</h2>
+      <div class="fs"><span id="finalC">0</span> / <span>10</span></div>
+      <p id="resMsg">Great spelling skills!</p>
+      <button class="restart-btn" id="restartBtn">🔄 Phir Khelein</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── STARS ── */
+  (function(){
+    var c=document.getElementById('stars');
+    for(var i=0;i<80;i++){
+      var s=document.createElement('div');s.className='star';
+      var sz=Math.random()*2.5+0.5;
+      s.style.cssText='width:'+sz+'px;height:'+sz+'px;top:'+Math.random()*100+'%;left:'+Math.random()*100+'%;--d:'+(Math.random()*3+1.5).toFixed(1)+'s;animation-delay:'+(Math.random()*4).toFixed(1)+'s';
+      c.appendChild(s);
+    }
+  })();
+
+  /* ── SCREEN SWITCHER ── */
+  function go(id){
+    document.querySelectorAll('.screen').forEach(function(s){s.classList.add('hidden');});
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  /* ── TOAST ── */
+  var _tt;
+  function toast(msg,type){
+    var t=document.getElementById('toast');
+    t.textContent=msg;t.className=type+' show';
+    clearTimeout(_tt);
+    _tt=setTimeout(function(){t.className=type;},3500);
+  }
+
+  /* ════════════════════════════════════════════════
+     STAGE 1 → STAGE 2
+     Splash always plays for 2.8s.
+     After that: if user logged in → go to game directly.
+                 if not           → show auth landing screen.
+     Firebase ONLY stores the user in window._fbUser.
+     It NEVER calls go() by itself — zero race condition.
+  ════════════════════════════════════════════════ */
+  window._fbUser = null;
+
+  setTimeout(function(){
+    var user = window._fbUser;
+    if(!user){
+      /* No session — show auth landing (Stage 2) */
+      go('authScreen');
+    } else {
+      /* Returning user — skip auth & onboarding, go straight to game */
+      setUserUI(user);
+      go('gameScreen');
+      startGame();
+    }
+  }, 2800);
+
+  /* ── SET USER NAME + AVATAR IN GAME UI ── */
+  function setUserUI(user){
+    var name = user.displayName || user.email.split('@')[0];
+    document.getElementById('ubName').textContent = '👋 ' + name;
+    var av = document.getElementById('ubAv');
+    av.textContent = name.charAt(0).toUpperCase();
+  }
+
+  /* ── AUTH LANDING BUTTONS ── */
+  document.getElementById('alSignupBtn').onclick = function(){ go('signupScreen'); };
+  document.getElementById('alLoginBtn').onclick  = function(){ go('loginScreen');  };
+
+  /* ── FORM BACK BUTTONS ── */
+  document.getElementById('suBackBtn').onclick = function(){ go('authScreen'); };
+  document.getElementById('liBackBtn').onclick = function(){ go('authScreen'); };
+  document.getElementById('suToLogin').onclick  = function(){ go('loginScreen');  };
+  document.getElementById('liToSignup').onclick = function(){ go('signupScreen'); };
+
+  /* ── ONBOARDING ── */
+  var obI = 0;
+  function obUpdate(){
+    document.getElementById('obTrack').style.transform = 'translateX(-'+obI*100+'%)';
+    document.querySelectorAll('#obDots .ob-dot').forEach(function(d,i){
+      d.classList.toggle('active', i===obI);
+    });
+    document.getElementById('obNextBtn').textContent = obI===2 ? '🚀 Start Playing!' : 'Next →';
+  }
+  document.getElementById('obNextBtn').onclick = function(){
+    if(obI < 2){ obI++; obUpdate(); }
+    else { go('gameScreen'); startGame(); }
+  };
+
+  document.getElementById('nxtBtn').onclick    = nextQuestion;
+  document.getElementById('restartBtn').onclick = restartQuiz;
+
+  /* ════════════════════════════════════════════════
+     STAGE 4 — GAME LOGIC
+  ════════════════════════════════════════════════ */
+  var words=[
+    {word:"Sky",wrong:["Skey","Skky","Skie"]},{word:"Air",wrong:["Aer","Aire","Ari"]},
+    {word:"Wind",wrong:["Wynd","Wend","Winnd"]},{word:"Rain",wrong:["Rane","Rayn","Rainn"]},
+    {word:"Snow",wrong:["Snowe","Snaw","Snno"]},{word:"Birds",wrong:["Byrds","Birdes","Birrds"]},
+    {word:"Drizzle",wrong:["Drizzal","Drizzel","Drizle"]},{word:"Cloud",wrong:["Cloude","Kload","Claud"]},
+    {word:"Sun",wrong:["Sunn","Son","Sune"]},{word:"Moon",wrong:["Moun","Muun","Moone"]},
+    {word:"River",wrong:["Rivar","Rivir","Rivver"]},{word:"Fountain",wrong:["Fontain","Fountin","Fountian"]},
+    {word:"Sea",wrong:["See","Sie","Seaa"]},{word:"Ocean",wrong:["Oceen","Ocian","Oshean"]},
+    {word:"Dawn",wrong:["Doun","Daun","Dawan"]},{word:"Dusk",wrong:["Dask","Duusk","Dusck"]},
+    {word:"Morning",wrong:["Mornning","Morrning","Morening"]},{word:"Noon",wrong:["Nune","Nuun","Noone"]},
+    {word:"Evening",wrong:["Evning","Evining","Evenning"]},{word:"Night",wrong:["Nite","Niight","Nightt"]},
+    {word:"Tree",wrong:["Trea","Tri","Treee"]},{word:"Plant",wrong:["Plent","Plaant","Plannt"]},
+    {word:"Forest",wrong:["Forrest","Forast","Forset"]},{word:"Mountain",wrong:["Mountian","Mountin","Mowntain"]},
+    {word:"Hill",wrong:["Hil","Hiil","Hille"]},{word:"Valley",wrong:["Valey","Vallay","Vallley"]},
+    {word:"Stone",wrong:["Stoan","Stoone","Stonne"]},{word:"Rock",wrong:["Roke","Rokk","Rocc"]},
+    {word:"Soil",wrong:["Soile","Soyl","Soill"]},{word:"Stars",wrong:["Stares","Starrs","Staars"]},
+    {word:"Branch",wrong:["Brunch","Barnch","Bransh"]},{word:"Fruit",wrong:["Frut","Fruut","Froit"]},
+    {word:"Fog",wrong:["Fogg","Foge","Faug"]},{word:"Dew",wrong:["Due","Dwe","Diw"]},
+    {word:"Grass",wrong:["Grasse","Gras","Graas"]},{word:"Shrub",wrong:["Shrube","Shrubb","Shrob"]},
+    {word:"Flower",wrong:["Flawer","Flowur","Flowar"]},{word:"Hail",wrong:["Hale","Haile","Haill"]},
+    {word:"Shower",wrong:["Showir","Shouver","Showar"]},{word:"Rays",wrong:["Rayes","Rayz","Rais"]},
+    {word:"Altitude",wrong:["Altitood","Altittude","Altitiude"]},
+    {word:"Temperature",wrong:["Temperture","Temprature","Tempurature"]},
+    {word:"Atmosphere",wrong:["Atmosfere","Atmosfhere","Atmoshpere"]},
+    {word:"Creeper",wrong:["Crieper","Creepir","Crepar"]},
+  ];
+
+  var qs=[],cur=0,corr=0,wrng=0,ans=false;
+  function shuf(a){return[...a].sort(function(){return Math.random()-.5;});}
+  function hint(w){return w.split('').map(function(c,i){return i===0?c:'_';}).join(' ');}
+
+  function startGame(){
+    /* Reset quiz section visibility */
+    var qsec=document.getElementById('quizSection');
+    qsec.style.display='';qsec.style.opacity='1';
+    document.getElementById('resultSection').className='result';
+    document.getElementById('sC').textContent='0';
+    document.getElementById('sW').textContent='0';
+    qs=shuf(words).slice(0,10);cur=0;corr=0;wrng=0;
+    loadQ();
+  }
+
+  function loadQ(){
+    ans=false;
+    var q=qs[cur];
+    document.getElementById('qNum2').textContent='Question '+(cur+1)+' of 10';
+    document.getElementById('qNum').textContent=(cur+1)+'/10';
+    document.getElementById('wordHint').textContent=hint(q.word);
+    var opts=shuf([q.word].concat(q.wrong));
+    var grid=document.getElementById('optsGrid');
+    grid.innerHTML='';
+    opts.forEach(function(o){
+      var b=document.createElement('button');b.className='opt';b.textContent=o;
+      b.onclick=function(){checkA(b,o,q.word);};
+      grid.appendChild(b);
+    });
+    document.getElementById('feedback').className='fb';
+    document.getElementById('nxtBtn').className='nxt-btn';
+    document.getElementById('progFill').style.width=(cur/10*100)+'%';
+  }
+
+  function checkA(btn,chosen,cw){
+    if(ans)return;ans=true;
+    document.querySelectorAll('.opt').forEach(function(b){b.disabled=true;});
+    if(chosen===cw){
+      corr++;btn.classList.add('correct');
+      document.getElementById('feedback').className='fb cfb show';
+      document.getElementById('fbIco').textContent='🎉';
+      document.getElementById('fbTxt').textContent='Bilkul sahi! "'+cw+'" correct hai!';
+      document.getElementById('sC').textContent=corr;
+    } else {
+      wrng++;btn.classList.add('wrong');
+      document.querySelectorAll('.opt').forEach(function(b){if(b.textContent===cw)b.classList.add('correct');});
+      document.getElementById('feedback').className='fb wfb show';
+      document.getElementById('fbIco').textContent='❌';
+      document.getElementById('fbTxt').textContent='Galat! Sahi spelling: "'+cw+'"';
+      document.getElementById('sW').textContent=wrng;
+    }
+    if(cur<9){document.getElementById('nxtBtn').className='nxt-btn show';}
+    else{setTimeout(showResult,1000);}
+  }
+
+  function nextQuestion(){
+    cur++;
+    var c=document.getElementById('card');
+    c.style.animation='none';void c.offsetWidth;c.style.animation='';
+    loadQ();
+  }
+
+  function showResult(){
+    /* Save stats for profile.html */
+    var gp=parseInt(localStorage.getItem('sq_gamesPlayed')||'0')+1;
+    localStorage.setItem('sq_gamesPlayed',gp);
+    var best=parseInt(localStorage.getItem('sq_bestScore')||'0');
+    if(corr>best)localStorage.setItem('sq_bestScore',corr);
+    localStorage.setItem('sq_totalCorr',parseInt(localStorage.getItem('sq_totalCorr')||'0')+corr);
+    localStorage.setItem('sq_totalQ',parseInt(localStorage.getItem('sq_totalQ')||'0')+10);
+
+    document.getElementById('quizSection').style.opacity='0';
+    setTimeout(function(){
+      document.getElementById('quizSection').style.display='none';
+      document.getElementById('progFill').style.width='100%';
+      document.getElementById('resultSection').className='result show';
+      document.getElementById('finalC').textContent=corr;
+      var p=corr/10;
+      if(p===1){document.getElementById('trophy').textContent='🏆';document.getElementById('resTitle').textContent='Perfect Score!';document.getElementById('resMsg').textContent='Aap spelling champion hain! 🌟';}
+      else if(p>=.7){document.getElementById('trophy').textContent='🌟';document.getElementById('resTitle').textContent='Bahut Accha!';document.getElementById('resMsg').textContent='Kaafi acchi spelling hai aapki!';}
+      else if(p>=.4){document.getElementById('trophy').textContent='👍';document.getElementById('resTitle').textContent='Theek Hai!';document.getElementById('resMsg').textContent='Thodi aur practice karein!';}
+      else{document.getElementById('trophy').textContent='📚';document.getElementById('resTitle').textContent='Practice Karein!';document.getElementById('resMsg').textContent='Roz padhne se spelling better hogi!';}
+    },400);
+  }
+
+  function restartQuiz(){ startGame(); }
+</script>
+
+<!-- ══ FIREBASE ══ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+         signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
+         updateProfile } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey:            "AIzaSyBWo6kILr1csElklswjyOQBiXWAZvUUHJw",
+  authDomain:        "spell-quests.firebaseapp.com",
+  projectId:         "spell-quests",
+  storageBucket:     "spell-quests.firebasestorage.app",
+  messagingSenderId: "135586511928",
+  appId:             "1:135586511928:web:0c78a70ad00521ef9d7acd",
+  measurementId:     "G-VK1RY5EVVP"
+});
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+/* ════════════════════════════════════════════════
+   KEY FIX — onAuthStateChanged does ONE thing only:
+   store the user in window._fbUser.
+   It NEVER calls go(). The splash timer reads it.
+   This completely eliminates the race condition.
+════════════════════════════════════════════════ */
+onAuthStateChanged(auth, function(user){
+  window._fbUser = user || null;
+});
+
+/* ── HELPERS ── */
+function ferr(code){
+  return ({
+    'auth/user-not-found':        '❌ No account found! Please sign up.',
+    'auth/wrong-password':        '❌ Wrong password! Try again.',
+    'auth/email-already-in-use':  '❌ Email already used! Please login.',
+    'auth/invalid-email':         '❌ Invalid email address!',
+    'auth/weak-password':         '❌ Password too weak! Use 6+ chars.',
+    'auth/invalid-credential':    '❌ Wrong email or password!',
+    'auth/too-many-requests':     '❌ Too many attempts! Wait a moment.',
+    'auth/network-request-failed':'❌ No internet! Check connection.',
+    'auth/popup-closed-by-user':  '❌ Google popup closed. Try again.',
+    'auth/cancelled-popup-request':'❌ Popup cancelled. Try again.',
+    'auth/unauthorized-domain':   '❌ Domain not authorized in Firebase!',
+  })[code] || '❌ Error: '+code;
+}
+function btnLoad(id,tid,msg){var b=document.getElementById(id);b.disabled=true;b.classList.add('loading');document.getElementById(tid).textContent=msg;}
+function btnReset(id,tid,msg){var b=document.getElementById(id);b.disabled=false;b.classList.remove('loading');document.getElementById(tid).textContent=msg;}
+
+function afterAuth(user, isNew){
+  setUserUI(user);
+  var seenKey = 'spellquest_seen_' + user.uid;
+  var seen = localStorage.getItem(seenKey);
+  localStorage.setItem(seenKey, '1');
+  if(isNew || !seen){
+    /* New user → onboarding first */
+    obI=0; obUpdate();
+    go('obScreen');
+  } else {
+    /* Returning user from login → straight to game */
+    go('gameScreen');
+    startGame();
+  }
+}
+
+/* ── GOOGLE (auth landing) ── */
+document.getElementById('alGoogleBtn').onclick = async function(){
+  try{
+    var r = await signInWithPopup(auth, provider);
+    var seen = localStorage.getItem('spellquest_seen_'+r.user.uid);
+    toast('🎉 Welcome '+(r.user.displayName||'Player')+'!','success');
+    setTimeout(function(){ afterAuth(r.user, !seen); }, 1200);
+  }catch(e){ toast(ferr(e.code),'error'); }
+};
+
+/* ── SIGNUP ── */
+document.getElementById('suBtn').onclick = async function(){
+  var name  = document.getElementById('su_name').value.trim();
+  var email = document.getElementById('su_email').value.trim();
+  var pass  = document.getElementById('su_pass').value;
+  if(!name)        {toast('❌ Please enter your name!','error');return;}
+  if(!email)       {toast('❌ Please enter your email!','error');return;}
+  if(!pass)        {toast('❌ Please enter a password!','error');return;}
+  if(pass.length<6){toast('❌ Password needs 6+ characters!','error');return;}
+  btnLoad('suBtn','suTxt','Creating...');
+  try{
+    var c = await createUserWithEmailAndPassword(auth,email,pass);
+    await updateProfile(c.user,{displayName:name});
+    toast('🎉 Account created! Welcome '+name+'!','success');
+    setTimeout(function(){ afterAuth(c.user, true); },1200);
+  }catch(e){btnReset('suBtn','suTxt','Create Account →');toast(ferr(e.code),'error');}
+};
+
+/* ── SIGNUP GOOGLE ── */
+document.getElementById('suGoogle').onclick = async function(){
+  try{
+    var r = await signInWithPopup(auth,provider);
+    var seen = localStorage.getItem('spellquest_seen_'+r.user.uid);
+    toast('🎉 Welcome '+(r.user.displayName||'Player')+'!','success');
+    setTimeout(function(){ afterAuth(r.user, !seen); },1200);
+  }catch(e){toast(ferr(e.code),'error');}
+};
+
+/* ── LOGIN ── */
+document.getElementById('liBtn').onclick = async function(){
+  var email = document.getElementById('li_email').value.trim();
+  var pass  = document.getElementById('li_pass').value;
+  if(!email){toast('❌ Please enter your email!','error');return;}
+  if(!pass) {toast('❌ Please enter your password!','error');return;}
+  btnLoad('liBtn','liTxt','Logging in...');
+  try{
+    var c = await signInWithEmailAndPassword(auth,email,pass);
+    var name = c.user.displayName || email.split('@')[0];
+    toast('✅ Welcome back '+name+'! 👋','success');
+    setTimeout(function(){ afterAuth(c.user, false); },1200);
+  }catch(e){btnReset('liBtn','liTxt','Login →');toast(ferr(e.code),'error');}
+};
+
+/* ── LOGIN GOOGLE ── */
+document.getElementById('liGoogle').onclick = async function(){
+  try{
+    var r = await signInWithPopup(auth,provider);
+    toast('✅ Welcome back '+(r.user.displayName||'Player')+'! 👋','success');
+    setTimeout(function(){ afterAuth(r.user, false); },1200);
+  }catch(e){toast(ferr(e.code),'error');}
+};
+
+/* ── LOGOUT ── */
+document.getElementById('loBtn').onclick = async function(){
+  await signOut(auth);
+  window._fbUser = null;
+  toast('👋 Logged out! See you soon.','info');
+  setTimeout(function(){ go('authScreen'); },800);
+};
+</script>
+</body>
+</html>
