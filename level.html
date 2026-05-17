@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choose Level — Spell Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{--sky:#0ea5e9;--deep:#0c1a3a;--card:#162040;--accent:#f59e0b;--green:#22c55e;--red:#ef4444;--text:#e2e8f0;--muted:#94a3b8;--purple:#8b5cf6;}
+  body{font-family:'Nunito',sans-serif;background:var(--deep);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow:hidden;}
+
+  /* STARS */
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
+  .star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d) ease-in-out infinite alternate;opacity:0;}
+  @keyframes twinkle{from{opacity:.1;transform:scale(.8);}to{opacity:.9;transform:scale(1.2);}}
+
+  /* TOAST */
+  #toast{position:fixed;top:30px;left:50%;transform:translateX(-50%) translateY(-140px);z-index:99999;padding:14px 28px;border-radius:16px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;min-width:240px;max-width:320px;box-shadow:0 12px 40px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.4,0,.2,1);text-align:center;}
+  #toast.show{transform:translateX(-50%) translateY(0);}
+  #toast.info{background:var(--sky);color:#fff;}
+  #toast.success{background:var(--green);color:#fff;}
+
+  /* PAGE */
+  .page{position:relative;z-index:1;width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;}
+
+  /* HEADER */
+  .hdr{text-align:center;margin-bottom:32px;animation:slideUp .5s ease both;}
+  .hdr-icon{font-size:3rem;margin-bottom:10px;display:block;filter:drop-shadow(0 0 20px rgba(245,158,11,.5));}
+  .hdr h1{font-family:'Fredoka One',cursive;font-size:2rem;color:var(--accent);letter-spacing:1px;text-shadow:0 0 30px rgba(245,158,11,.3);}
+  .hdr p{color:var(--muted);font-size:.9rem;font-weight:600;margin-top:6px;}
+
+  /* LEVEL CARDS */
+  .levels{width:100%;display:flex;flex-direction:column;gap:14px;}
+
+  .level-card{width:100%;background:var(--card);border-radius:20px;padding:20px 22px;display:flex;align-items:center;gap:18px;cursor:pointer;border:2px solid transparent;transition:all .25s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;animation:slideUp .5s ease both;}
+  .level-card:nth-child(1){animation-delay:.05s;}
+  .level-card:nth-child(2){animation-delay:.12s;}
+  .level-card:nth-child(3){animation-delay:.19s;}
+
+  .level-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .25s;}
+  .level-card:hover::before{opacity:1;}
+  .level-card:active{transform:scale(.97);}
+
+  /* KIDS */
+  .level-card.kids{border-color:rgba(34,197,94,.2);}
+  .level-card.kids::before{background:rgba(34,197,94,.05);}
+  .level-card.kids:hover{border-color:rgba(34,197,94,.5);transform:translateX(5px);}
+  .level-card.kids .lv-icon{background:rgba(34,197,94,.15);box-shadow:0 8px 24px rgba(34,197,94,.2);}
+
+  /* INTERMEDIATE */
+  .level-card.intermediate{border-color:rgba(14,165,233,.2);}
+  .level-card.intermediate::before{background:rgba(14,165,233,.05);}
+  .level-card.intermediate:hover{border-color:rgba(14,165,233,.5);transform:translateX(5px);}
+  .level-card.intermediate .lv-icon{background:rgba(14,165,233,.15);box-shadow:0 8px 24px rgba(14,165,233,.2);}
+
+  /* HIGHER */
+  .level-card.higher{border-color:rgba(139,92,246,.2);}
+  .level-card.higher::before{background:rgba(139,92,246,.05);}
+  .level-card.higher:hover{border-color:rgba(139,92,246,.5);transform:translateX(5px);}
+  .level-card.higher .lv-icon{background:rgba(139,92,246,.15);box-shadow:0 8px 24px rgba(139,92,246,.2);}
+
+  .lv-icon{width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;flex-shrink:0;}
+
+  .lv-info{flex:1;}
+  .lv-name{font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--text);margin-bottom:3px;}
+  .lv-desc{color:var(--muted);font-size:.78rem;font-weight:600;line-height:1.45;}
+
+  .lv-badge{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+  .badge-pill{font-size:.65rem;font-weight:800;padding:3px 10px;border-radius:99px;letter-spacing:.5px;text-transform:uppercase;}
+  .badge-pill.available{background:rgba(14,165,233,.15);color:var(--sky);border:1px solid rgba(14,165,233,.3);}
+  .badge-pill.soon{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1);}
+  .lv-arrow{color:var(--muted);font-size:1.1rem;opacity:.5;}
+  .level-card.intermediate .lv-arrow{color:var(--sky);opacity:1;}
+
+  /* FOOTER NOTE */
+  .foot-note{margin-top:28px;text-align:center;color:var(--muted);font-size:.78rem;font-weight:600;animation:slideUp .5s ease .3s both;}
+  .foot-note span{color:var(--sky);}
+
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div id="toast"></div>
+
+<div class="page">
+
+  <div class="hdr">
+    <span class="hdr-icon">🎮</span>
+    <h1>Choose Your Level</h1>
+    <p>Select the difficulty that suits you best</p>
+  </div>
+
+  <div class="levels">
+
+    <!-- KIDS LEVEL -->
+    <div class="level-card kids" onclick="comingSoon('Kids Level')">
+      <div class="lv-icon">🐣</div>
+      <div class="lv-info">
+        <div class="lv-name">Kids Level</div>
+        <div class="lv-desc">Simple 3–4 letter words<br>Perfect for beginners &amp; young learners</div>
+      </div>
+      <div class="lv-badge">
+        <span class="badge-pill soon">Coming Soon</span>
+        <span class="lv-arrow">›</span>
+      </div>
+    </div>
+
+    <!-- INTERMEDIATE LEVEL -->
+    <div class="level-card intermediate" onclick="goGame()">
+      <div class="lv-icon">🎯</div>
+      <div class="lv-info">
+        <div class="lv-name">Intermediate</div>
+        <div class="lv-desc">Nature &amp; everyday words<br>44+ questions · 10 per round</div>
+      </div>
+      <div class="lv-badge">
+        <span class="badge-pill available">Play Now</span>
+        <span class="lv-arrow">›</span>
+      </div>
+    </div>
+
+    <!-- HIGHER LEVEL -->
+    <div class="level-card higher" onclick="comingSoon('Higher Level')">
+      <div class="lv-icon">🔥</div>
+      <div class="lv-info">
+        <div class="lv-name">Higher Level</div>
+        <div class="lv-desc">Complex &amp; advanced words<br>For spelling champions only</div>
+      </div>
+      <div class="lv-badge">
+        <span class="badge-pill soon">Coming Soon</span>
+        <span class="lv-arrow">›</span>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="foot-note">More levels <span>coming soon!</span> Stay tuned 🌿</p>
+
+</div>
+
+<script>
+  /* Stars */
+  (function(){
+    var c=document.getElementById('stars');
+    for(var i=0;i<70;i++){
+      var s=document.createElement('div');s.className='star';
+      var sz=Math.random()*2.5+0.5;
+      s.style.cssText='width:'+sz+'px;height:'+sz+'px;top:'+Math.random()*100+'%;left:'+Math.random()*100+'%;--d:'+(Math.random()*3+1.5).toFixed(1)+'s;animation-delay:'+(Math.random()*4).toFixed(1)+'s';
+      c.appendChild(s);
+    }
+  })();
+
+  /* Toast */
+  var _tt;
+  function toast(msg,type){
+    var t=document.getElementById('toast');
+    t.textContent=msg;t.className=type+' show';
+    clearTimeout(_tt);_tt=setTimeout(function(){t.className=type;},3000);
+  }
+
+  /* Coming Soon */
+  function comingSoon(level){
+    toast('🚧 '+level+' — Coming Soon!','info');
+  }
+
+  /* Go to Game */
+  function goGame(){
+    window.location.href='index.html?play=true';
+  }
+</script>
+
+</body>
+</html>
